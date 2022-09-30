@@ -2,7 +2,6 @@ from razdel import tokenize
 from corus.sources.rudrec import RuDReCRecord, load_rudrec
 import pandas as pd
 import numpy as np
-from traitlets import default
 
 
 class MednerDataset:
@@ -128,6 +127,8 @@ class MednerDataset:
     def get_medical_data(self, dataframe=True, shuffle=False) -> pd.DataFrame | list[dict[str, list[str]]]:
         if shuffle:
             medical_data = np.random.permutation(self.medical_data).tolist()
+        else:
+            medical_data = self.medical_data
             
         if dataframe:
             return pd.DataFrame(medical_data)
