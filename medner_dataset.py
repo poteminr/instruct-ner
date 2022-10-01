@@ -134,6 +134,4 @@ class MednerDataset:
             return pd.DataFrame(medical_data)
         else:
             return medical_data
-    
-
-    
+        
