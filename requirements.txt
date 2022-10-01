@@ -1,6 +1,5 @@
 streamlit
 spacy_streamlit
-PIL
 transformers
 razdel
 corus
