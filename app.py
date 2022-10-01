@@ -4,15 +4,16 @@ import spacy_streamlit
 from PIL import Image
 from transformers import pipeline, AutoModelForTokenClassification, AutoTokenizer
 
+
 MODEL_PATH = 'cointegrated/rubert-tiny2' 
 LOGO_PATH = 'medner_logo_v1.png'
 model = AutoModelForTokenClassification.from_pretrained(MODEL_PATH)
 tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
-
 hugginface_pipeline = pipeline(model=model,
                                tokenizer=tokenizer,
                                task='ner', 
                                aggregation_strategy='average')
+
 
 def generate_doc(text: str) -> Tuple[dict, list[dict]]:
     prediction = hugginface_pipeline(text)

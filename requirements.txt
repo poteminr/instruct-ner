@@ -1,7 +1,9 @@
 streamlit
 spacy_streamlit
 transformers
+datasets
 razdel
 corus
 pandas
 numpy
+torch
