@@ -7,3 +7,5 @@ corus
 pandas
 numpy
 torch
+youtube_dl
+whisper
