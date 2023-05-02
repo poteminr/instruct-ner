@@ -9,3 +9,4 @@ numpy
 torch
 youtube_dl
 whisper
+pybrat
