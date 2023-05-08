@@ -1,6 +1,6 @@
 import numpy as np
 
-tags = ['ACTIVITY',
+TAGS = ['ACTIVITY',
         'ADMINISTRATION_ROUTE',
         'ANATOMY',
         'CHEM',
@@ -43,7 +43,7 @@ tags = ['ACTIVITY',
 def get_tagset(tagging_scheme: str = "BIO"):
     # create pairs B-tag and I-tag from fine-grainder tagset of NerelBIO
     if tagging_scheme == "BIO":
-        iob_tags = ['O'] + list(np.array([[f'B-{tag}', f'I-{tag}'] for tag in tags]).flatten())
+        iob_tags = ['O'] + list(np.array([[f'B-{tag}', f'I-{tag}'] for tag in TAGS]).flatten())
     elif tagging_scheme == "BILOU":
         raise NotImplementedError
     return dict(zip(iob_tags, range(len(iob_tags))))
