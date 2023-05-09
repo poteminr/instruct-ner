@@ -36,7 +36,10 @@ TAGS = ['ACTIVITY',
         'PRODUCT',
         'PROFESSION',
         'STATE_OR_PROVINCE',
-        'TIME'
+        'TIME',
+        'LANGUAGE',
+        'CRIME',
+        'AWARD'
         ]
 
 
