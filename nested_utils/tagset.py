@@ -44,9 +44,8 @@ TAGS = ['ACTIVITY',
 
 
 def get_tagset(tagging_scheme: str = "BIO"):
-    # create pairs B-tag and I-tag from fine-grainder tagset of NerelBIO
     if tagging_scheme == "BIO":
-        iob_tags = ['O'] + list(np.array([[f'B-{tag}', f'I-{tag}'] for tag in TAGS]).flatten())
+        tags = ['O'] + list(np.array([[f'B-{tag}', f'I-{tag}'] for tag in TAGS]).flatten())
     elif tagging_scheme == "BILOU":
-        raise NotImplementedError
-    return dict(zip(iob_tags, range(len(iob_tags))))
+        tags = ['O'] + list(np.array([[f'B-{tag}', f'I-{tag}', f'L-{tag}', f'U-{tag}'] for tag in TAGS]).flatten())
+    return dict(zip(tags, range(len(tags))))
