@@ -1,3 +1,4 @@
+SEP_SYMBOL = ' <ans> '
 ENTITY_TYPES = ['Drugname', 'Drugclass', 'Drugform', 'DI', 'ADR', 'Finding']
 ENTITY_DEFENITIONS = [
     'упоминания торговой марки лекарства или ингредиенты/активные соединения продукта',

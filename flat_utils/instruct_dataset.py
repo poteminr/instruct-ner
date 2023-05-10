@@ -1,7 +1,7 @@
 import numpy as np
 from tqdm import tqdm
 from corus import rudrec, load_rudrec
-from flat_utils.instruct_utils import ENTITY_TYPES, entity_type_to_instruction
+from flat_utils.instruct_utils import SEP_SYMBOL, ENTITY_TYPES, entity_type_to_instruction
 
 
 def download_dataset(filepath: str) -> list:
@@ -21,7 +21,7 @@ def create_instructions_for_record(record: rudrec.RuDReCRecord) -> list[dict[str
     text, entities = parse_entities_from_record(record)
     for entity_type in entities.keys():
         instruction = entity_type_to_instruction(entity_type)
-        output = ' <s> '.join(entities[entity_type])
+        output = SEP_SYMBOL.join(entities[entity_type])
         record_instructions.append({
             'instruction': instruction,
             'input': text,
