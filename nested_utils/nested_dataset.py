@@ -49,7 +49,7 @@ class NerelBioDataset(torch.utils.data.Dataset):
             self.instances.append((input_ids, labels, attention_mask))
 
     @staticmethod
-    def pad_labels(labels: dict, max_length_in_batch: int, seq_len: int):
+    def pad_labels(labels: dict, max_length_in_batch: int, seq_len: int) -> dict:
         padding = torch.zeros((max_length_in_batch-seq_len, 5))
         padding[:, 3] = 1
         for key in labels.keys():
