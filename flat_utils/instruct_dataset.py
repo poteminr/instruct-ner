@@ -25,7 +25,9 @@ def create_instructions_for_record(record: rudrec.RuDReCRecord) -> list[dict[str
         record_instructions.append({
             'instruction': instruction,
             'input': text,
-            'output': output
+            'output': output,
+            'label': entity_type,
+            'id': f"{record.sentence_id}_{record.file_name}"
         })
     return record_instructions
 
