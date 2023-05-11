@@ -1,4 +1,4 @@
-SEP_SYMBOL = ' <ans> '
+SEP_SYMBOL = ' | '
 ENTITY_TYPES = ['Drugname', 'Drugclass', 'Drugform', 'DI', 'ADR', 'Finding']
 ENTITY_DEFENITIONS = [
     'упоминания торговой марки лекарства или ингредиенты/активные соединения продукта',
@@ -10,8 +10,12 @@ ENTITY_DEFENITIONS = [
     'любые побочные эффекты или симптомы, которые не были непосредственно испытаны пациентом'
     ]
 
+MODEL_INPUT_TEMPLATE = {
+            'prompts_input': "### Задание: {instruction}\n### Вход: {inp}\n### Ответ: ",
+            'output_separator':  "Ответ: "        
+        }
 
 def entity_type_to_instruction(entity_type: str) -> str:
-    base_phrase = 'Найди в тексте '
+    base_phrase = 'Выдели из текста '
     return base_phrase + dict(zip(ENTITY_TYPES, ENTITY_DEFENITIONS))[entity_type]
     
