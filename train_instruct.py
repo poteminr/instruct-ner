@@ -2,10 +2,12 @@ import json
 import os
 import wandb
 import torch
+import argparse
 from transformers import Trainer, TrainingArguments, TrainerCallback, TrainerState, TrainerControl
 from transformers.trainer_utils import PREFIX_CHECKPOINT_DIR
 from transformers import AutoTokenizer, AutoModelForCausalLM, DataCollatorForTokenClassification
-from peft import get_peft_model, LoraConfig, prepare_model_for_int8_training, PeftConfig
+from peft import get_peft_model, LoraConfig, prepare_model_for_int8_training, PeftConfig, PeftModel
+
 from flat_utils.instruct_dataset import InstructDataset, create_train_test_instruct_datasets
 from train_utils import fix_tokenizer, fix_model, set_random_seed
 
@@ -27,80 +29,67 @@ class SavePeftModelCallback(TrainerCallback):
         kwargs["model"].save_pretrained(peft_model_path)
         return control
     
+    
+def print_trainable_parameters(model):
+    trainable_params = 0
+    all_param = 0
+    for _, param in model.named_parameters():
+        all_param += param.numel()
+        if param.requires_grad:
+            trainable_params += param.numel()
+    print(
+        f"trainable params: {trainable_params} || all params: {all_param} || trainable%: {100 * trainable_params / all_param}"
+    )
+      
+       
 def train(
-    train_instructions,
-    test_instructions,
-    output_dir: str = 'models/llama_7b_lora',
-    seed: int = 42,
-    config_file: str = 'llama_7b_lora.json',
-
+    train_instructions: list[dict[str, str]],
+    test_instructions: list[dict[str, str]],
+    model_name: str,
+    output_dir: str,
+    seed: int,
+    config_file: str
 ):
     set_random_seed(seed)
     with open(config_file, "r") as r:
         config = json.load(r)
 
-    device_map = "auto"
-
-
     deepspeed_config = config.get("deepspeed")
     trainer_config = config["trainer"]
     lora_config = config.get("lora")
     callbacks = [SavePeftModelCallback] if lora_config else []
-    training_args = TrainingArguments(
-        output_dir=output_dir,
-        save_total_limit=1,
-        load_best_model_at_end=True,
-        report_to='wandb',
-        deepspeed=deepspeed_config,
-        **trainer_config
-    )
-
-    model_name = 'IlyaGusev/llama_7b_ru_turbo_alpaca_lora'
 
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     tokenizer = fix_tokenizer(tokenizer)
-    tokenizer.save_pretrained(output_dir)
 
-    model_type = config.get("model_type", "causal")
-    templates_path = config.get("templates_path", "ru_alpaca_template.json")
     only_target_loss = config.get("only_target_loss", True)
-    mode = config.get("mode", "instruct")
-    if mode == "instruct":
-        max_source_tokens_count = config["max_source_tokens_count"]
-        max_target_tokens_count = config["max_target_tokens_count"]
-        target_field = config.get("target_field", "output")
-        source_field = config.get("source_field", "input")
+    
+    max_source_tokens_count = config["max_source_tokens_count"]
+    max_target_tokens_count = config["max_target_tokens_count"]
 
-        train_dataset = InstructDataset(
-            train_instructions,
-            tokenizer,
-            only_target_loss=only_target_loss
-        )
+    train_dataset = InstructDataset(
+        train_instructions,
+        tokenizer,
+        only_target_loss=only_target_loss
+    )
 
-        val_dataset = InstructDataset(
-            test_instructions,
-            tokenizer,
-            only_target_loss=only_target_loss
-        )
-        
+    val_dataset = InstructDataset(
+        test_instructions,
+        tokenizer,
+        only_target_loss=only_target_loss
+    )   
 
     data_collator = DataCollatorForTokenClassification(tokenizer, pad_to_multiple_of=8)
-
-    print("INPUT_IDS")
-    print(data_collator([train_dataset[0], train_dataset[1]])["input_ids"][0])
-    print("MASK")
-    print(data_collator([train_dataset[0], train_dataset[1]])["attention_mask"][0])
-    print("LABELS")
-    print(data_collator([train_dataset[0], train_dataset[1]])["labels"][0])
-
-
+    
     load_in_8bit = bool(config.get("load_in_8bit", False))
     if load_in_8bit:
+        peft_config = PeftConfig.from_pretrained(model_name)
         model = AutoModelForCausalLM.from_pretrained(
-            PeftConfig.from_pretrained(model_name).base_model_name_or_path,
+            peft_config.base_model_name_or_path,
             load_in_8bit=True,
-            device_map=device_map
+            device_map='auto'
         )
+        model = PeftModel.from_pretrained(model, model_name)
         model = fix_model(model, tokenizer, use_resize=False)
         model = prepare_model_for_int8_training(model)
     else:
@@ -109,9 +98,8 @@ def train(
 
     # Default model generation params
     model.config.num_beams = 5
-    if mode == "instruct":
-        max_tokens_count = max_target_tokens_count + max_source_tokens_count + 1
-    model.config.max_length = max_tokens_count if model_type == "causal" else max_target_tokens_count
+    max_tokens_count = max_target_tokens_count + max_source_tokens_count + 1
+    model.config.max_length = max_tokens_count
 
     if torch.cuda.device_count() > 1:
         model.is_parallelizable = True
@@ -123,6 +111,7 @@ def train(
 
     deepspeed_config = config.get("deepspeed")
     trainer_config = config["trainer"]
+    
     training_args = TrainingArguments(
         output_dir=output_dir,
         save_total_limit=1,
@@ -142,10 +131,28 @@ def train(
     )
 
     with wandb.init(project="rulm_self_instruct", name=config_file) as run:
+        print_trainable_parameters(model)
         trainer.train()
-        model.save_pretrained(output_dir)
+        model.push_to_hub("poteminr/llama-rudrec", use_auth_token=True)
+        # model.save_pretrained(output_dir)
         
         
 if __name__ == "__main__":
-    train_dataset, test_dataset = create_train_test_instruct_datasets('data/rudrec/rudrec_annotated.json')
-    train(train_dataset, train_dataset)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--rudrec_path", default='data/rudrec/rudrec_annotated.json', type=str, help='train file_path')
+    parser.add_argument("--output_dir", default='models/llama_7b_lora', type=str, help='output_dir')
+    parser.add_argument("--test_size", default=0.3, type=float, help='test_size')
+    parser.add_argument("--random_seed", default=42, type=int, help='random_seed')
+    parser.add_argument("--config_file", default='llama_7b_lora.json', type=str, help='path to config file')
+    parser.add_argument("--model_name", default='IlyaGusev/llama_7b_ru_turbo_alpaca_lora', type=str, help='hf model name')
+
+    arguments = parser.parse_args()
+    
+    train_dataset, test_dataset = create_train_test_instruct_datasets(
+        filepath=arguments.rudrec_path,
+        test_size=arguments.test_size,
+        random_seed=arguments.random_seed
+    )
+    
+    train(train_dataset, test_dataset,arguments.model_name, arguments.output_dir, arguments.random_seed, arguments.config_file)
+    

@@ -60,7 +60,7 @@ def create_train_test_instruct_datasets(
 
 
 class InstructDataset(Dataset):
-    def __init__(self, instructions: list[dict], tokenizer, only_target_loss: bool = True):
+    def __init__(self, instructions: list[dict[str, str]], tokenizer, only_target_loss: bool = True):
         self.instructions = instructions
         self.tokenizer = tokenizer
         self.only_target_loss = only_target_loss
