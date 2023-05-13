@@ -31,9 +31,13 @@ def create_instructions_for_record(record: rudrec.RuDReCRecord) -> list[dict[str
     return record_instructions
 
 
-def create_instruct_dataset(filepath: str) -> list[dict[str, str]]:
+def create_instruct_dataset(filepath: str, max_instances: int = -1) -> list[dict[str, str]]:
     instructions = []
     rudrec_dataset = list(load_rudrec(filepath))
+    
+    if max_instances != 1 and len(rudrec_dataset) > max_instances:
+        rudrec_dataset = rudrec_dataset[:max_instances]
+        
     for record in tqdm(rudrec_dataset):
         instructions = np.concatenate((instructions, create_instructions_for_record(record)))
     
@@ -42,12 +46,17 @@ def create_instruct_dataset(filepath: str) -> list[dict[str, str]]:
 
 def create_train_test_instruct_datasets(
         filepath: str,
+        max_instances: int = -1,
         test_size: float = 0.3,
         random_seed: int = 42
-) -> tuple[list[dict[str, str]]]:
+) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
     
     train_instructions, test_instructions = [], []
     rudrec_dataset = list(load_rudrec(filepath))
+    
+    if max_instances != 1 and len(rudrec_dataset) > max_instances:
+        rudrec_dataset = rudrec_dataset[:max_instances]
+        
     train_dataset, test_dataset = train_test_split(rudrec_dataset, test_size=test_size, random_state=random_seed)
 
     for record in tqdm(train_dataset):

@@ -10,3 +10,5 @@ torch
 youtube_dl
 whisper
 pybrat
+peft
+wandb

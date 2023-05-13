@@ -12,7 +12,7 @@ from flat_utils.instruct_dataset import InstructDataset, create_train_test_instr
 from train_utils import fix_tokenizer, fix_model, set_random_seed
 
 
-
+# https://github.com/huggingface/peft/issues/96
 class SavePeftModelCallback(TrainerCallback):
     def on_save(
         self,
@@ -28,20 +28,8 @@ class SavePeftModelCallback(TrainerCallback):
         peft_model_path = os.path.join(checkpoint_folder, "adapter_model")
         kwargs["model"].save_pretrained(peft_model_path)
         return control
-    
-    
-def print_trainable_parameters(model):
-    trainable_params = 0
-    all_param = 0
-    for _, param in model.named_parameters():
-        all_param += param.numel()
-        if param.requires_grad:
-            trainable_params += param.numel()
-    print(
-        f"trainable params: {trainable_params} || all params: {all_param} || trainable%: {100 * trainable_params / all_param}"
-    )
-      
-       
+     
+
 def train(
     train_instructions: list[dict[str, str]],
     test_instructions: list[dict[str, str]],
@@ -54,8 +42,6 @@ def train(
     with open(config_file, "r") as r:
         config = json.load(r)
 
-    deepspeed_config = config.get("deepspeed")
-    trainer_config = config["trainer"]
     lora_config = config.get("lora")
     callbacks = [SavePeftModelCallback] if lora_config else []
 
@@ -81,7 +67,7 @@ def train(
 
     data_collator = DataCollatorForTokenClassification(tokenizer, pad_to_multiple_of=8)
     
-    load_in_8bit = bool(config.get("load_in_8bit", False))
+    load_in_8bit = bool(config.get("load_in_8bit", True))
     if load_in_8bit:
         peft_config = PeftConfig.from_pretrained(model_name)
         model = AutoModelForCausalLM.from_pretrained(
@@ -89,9 +75,9 @@ def train(
             load_in_8bit=True,
             device_map='auto'
         )
-        model = PeftModel.from_pretrained(model, model_name)
         model = fix_model(model, tokenizer, use_resize=False)
         model = prepare_model_for_int8_training(model)
+        model = PeftModel.from_pretrained(model, model_name, is_trainable=True)
     else:
         model = AutoModelForCausalLM.from_pretrained(model_name)
         model = fix_model(model, tokenizer)
@@ -105,9 +91,9 @@ def train(
         model.is_parallelizable = True
         model.model_parallel = True
 
-    if lora_config:
-        lora_config = LoraConfig(**lora_config)
-        model = get_peft_model(model, lora_config)
+    # if lora_config:
+    #     lora_config = LoraConfig(**lora_config)
+        # model = get_peft_model(model, lora_config)
 
     deepspeed_config = config.get("deepspeed")
     trainer_config = config["trainer"]
@@ -131,28 +117,38 @@ def train(
     )
 
     with wandb.init(project="rulm_self_instruct", name=config_file) as run:
-        print_trainable_parameters(model)
+        model.print_trainable_parameters()
         trainer.train()
         model.push_to_hub("poteminr/llama-rudrec", use_auth_token=True)
+        tokenizer.push_to_hub("poteminr/llama-rudrec", use_auth_token=True)
         # model.save_pretrained(output_dir)
         
         
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--rudrec_path", default='data/rudrec/rudrec_annotated.json', type=str, help='train file_path')
-    parser.add_argument("--output_dir", default='models/llama_7b_lora', type=str, help='output_dir')
+    parser.add_argument("--output_dir", default='models/llama-rudrec', type=str, help='output_dir')
     parser.add_argument("--test_size", default=0.3, type=float, help='test_size')
     parser.add_argument("--random_seed", default=42, type=int, help='random_seed')
     parser.add_argument("--config_file", default='llama_7b_lora.json', type=str, help='path to config file')
     parser.add_argument("--model_name", default='IlyaGusev/llama_7b_ru_turbo_alpaca_lora', type=str, help='hf model name')
+    parser.add_argument("--max_instances", default=-1, type=int, help='max number of rudrec records')
 
     arguments = parser.parse_args()
     
     train_dataset, test_dataset = create_train_test_instruct_datasets(
         filepath=arguments.rudrec_path,
+        max_instances=arguments.max_instances,
         test_size=arguments.test_size,
         random_seed=arguments.random_seed
     )
     
-    train(train_dataset, test_dataset,arguments.model_name, arguments.output_dir, arguments.random_seed, arguments.config_file)
+    train(
+        train_instructions=train_dataset,
+        test_instructions=test_dataset,
+        model_name=arguments.model_name,
+        output_dir=arguments.output_dir,
+        seed=arguments.random_seed,
+        config_file=arguments.config_file
+        )
     
