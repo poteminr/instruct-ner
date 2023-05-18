@@ -15,7 +15,15 @@ MODEL_INPUT_TEMPLATE = {
             'output_separator':  "Ответ: "        
         }
 
+
+def create_output_from_entities(entities: list, out_type: int = 1) -> str:
+    if out_type == 1:
+        return "{}".format(entities)[1:-1]
+    elif out_type == 2:
+        return SEP_SYMBOL.join(entities)
+
+
 def entity_type_to_instruction(entity_type: str) -> str:
-    base_phrase = 'Выдели из текста '
+    base_phrase = 'Ты решаешь задачу NER. Извлеки из текста '
     return base_phrase + dict(zip(ENTITY_TYPES, ENTITY_DEFENITIONS))[entity_type]
     

@@ -4,7 +4,7 @@ from torch.utils.data import Dataset
 from tqdm import tqdm
 from corus import rudrec, load_rudrec
 from sklearn.model_selection import train_test_split
-from flat_utils.instruct_utils import SEP_SYMBOL, ENTITY_TYPES, MODEL_INPUT_TEMPLATE, entity_type_to_instruction
+from flat_utils.instruct_utils import ENTITY_TYPES, MODEL_INPUT_TEMPLATE, entity_type_to_instruction, create_output_from_entities
 
 
 def parse_entities_from_record(record: rudrec.RuDReCRecord) -> tuple[str, dict[str, list]]:
@@ -20,7 +20,7 @@ def create_instructions_for_record(record: rudrec.RuDReCRecord) -> list[dict[str
     text, entities = parse_entities_from_record(record)
     for entity_type in entities.keys():
         instruction = entity_type_to_instruction(entity_type)
-        output = SEP_SYMBOL.join(entities[entity_type])
+        output = create_output_from_entities(entities[entity_type])
         record_instructions.append({
             'instruction': instruction,
             'input': text,
