@@ -130,7 +130,7 @@ if __name__ == "__main__":
     parser.add_argument("--output_dir", default='models/llama-rudrec', type=str, help='output_dir')
     parser.add_argument("--test_size", default=0.3, type=float, help='test_size')
     parser.add_argument("--random_seed", default=42, type=int, help='random_seed')
-    parser.add_argument("--config_file", default='llama_7b_lora.json', type=str, help='path to config file')
+    parser.add_argument("--config_file", default='configs/llama_7b_lora.json', type=str, help='path to config file')
     parser.add_argument("--model_name", default='IlyaGusev/llama_7b_ru_turbo_alpaca_lora', type=str, help='hf model name')
     parser.add_argument("--max_instances", default=-1, type=int, help='max number of rudrec records')
 
