@@ -4,7 +4,7 @@ from torch.utils.data import Dataset
 from tqdm import tqdm
 from corus import rudrec, load_rudrec
 from sklearn.model_selection import train_test_split
-from flat_utils.instruct_utils import ENTITY_TYPES, MODEL_INPUT_TEMPLATE, entity_type_to_instruction, create_output_from_entities
+from flat_utils.instruct_utils import ENTITY_TYPES, MODEL_INPUT_TEMPLATE, GENERAL_INSTRUCTION, entity_type_to_instruction, create_output_from_entities
 
 
 def parse_entities_from_record(record: rudrec.RuDReCRecord) -> tuple[str, dict[str, list]]:
@@ -15,57 +15,65 @@ def parse_entities_from_record(record: rudrec.RuDReCRecord) -> tuple[str, dict[s
     return record.text, entities
 
 
-def create_instructions_for_record(record: rudrec.RuDReCRecord) -> list[dict[str, str]]:
-    record_instructions = []
+def create_instructions_for_record(record: rudrec.RuDReCRecord, is_sepate_labels: bool = False) -> list[dict[str, str]]:
     text, entities = parse_entities_from_record(record)
-    for entity_type in entities.keys():
-        instruction = entity_type_to_instruction(entity_type)
-        output = create_output_from_entities(entities[entity_type])
-        record_instructions.append({
-            'instruction': instruction,
+    if is_sepate_labels:
+        record_instructions = []
+        for entity_type in entities.keys():
+            instruction = entity_type_to_instruction(entity_type)
+            output = create_output_from_entities(entities[entity_type])
+            record_instructions.append({
+                'instruction': instruction,
+                'input': text,
+                'output': output,
+                'label': entity_type,
+                'id': f"{record.sentence_id}_{record.file_name}"
+            })
+        return record_instructions
+    else:
+        return {
+            'instruction': GENERAL_INSTRUCTION,
             'input': text,
-            'output': output,
-            'label': entity_type,
+            'output': "{}".format(entities),
             'id': f"{record.sentence_id}_{record.file_name}"
-        })
-    return record_instructions
+        }
 
 
-def create_instruct_dataset(filepath: str, max_instances: int = -1) -> list[dict[str, str]]:
+def _fill_instructions_list(dataset: list[rudrec.RuDReCRecord], is_sepate_labels: bool) -> list[dict[str, str]]:
     instructions = []
+    for record in tqdm(dataset):
+        if is_sepate_labels:
+            instructions = np.concatenate((instructions, create_instructions_for_record(record, is_sepate_labels)))
+        else:
+            instructions.append(create_instructions_for_record(record, is_sepate_labels))
+        
+    return instructions
+
+
+def create_instruct_dataset(filepath: str, max_instances: int = -1, is_sepate_labels: bool = False) -> list[dict[str, str]]:
     rudrec_dataset = list(load_rudrec(filepath))
     
     if max_instances != 1 and len(rudrec_dataset) > max_instances:
         rudrec_dataset = rudrec_dataset[:max_instances]
         
-    for record in tqdm(rudrec_dataset):
-        instructions = np.concatenate((instructions, create_instructions_for_record(record)))
-    
-    return instructions
+    return _fill_instructions_list(rudrec_dataset, is_sepate_labels)
 
 
 def create_train_test_instruct_datasets(
         filepath: str,
         max_instances: int = -1,
+        is_sepate_labels: bool = False,
         test_size: float = 0.3,
         random_seed: int = 42
 ) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
     
-    train_instructions, test_instructions = [], []
     rudrec_dataset = list(load_rudrec(filepath))
     
     if max_instances != 1 and len(rudrec_dataset) > max_instances:
         rudrec_dataset = rudrec_dataset[:max_instances]
         
     train_dataset, test_dataset = train_test_split(rudrec_dataset, test_size=test_size, random_state=random_seed)
-
-    for record in tqdm(train_dataset):
-        train_instructions = np.concatenate((train_instructions, create_instructions_for_record(record)))
-        
-    for record in tqdm(test_dataset):
-        test_instructions = np.concatenate((test_instructions, create_instructions_for_record(record)))
-    
-    return train_instructions, test_instructions
+    return _fill_instructions_list(train_dataset, is_sepate_labels), _fill_instructions_list(test_dataset, is_sepate_labels)
 
 
 class InstructDataset(Dataset):

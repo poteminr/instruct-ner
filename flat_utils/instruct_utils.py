@@ -15,6 +15,8 @@ MODEL_INPUT_TEMPLATE = {
             'output_separator':  "Ответ: "        
         }
 
+GENERAL_INSTRUCTION = "Ты решаешь задачу NER. Извлеки из текста слова, относящиеся к каждой из следующих сущностей: Drugname, Drugclass, DI, ADR, Finding."
+
 
 def create_output_from_entities(entities: list, out_type: int = 1) -> str:
     if out_type == 1:
