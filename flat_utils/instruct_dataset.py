@@ -15,9 +15,9 @@ def parse_entities_from_record(record: rudrec.RuDReCRecord) -> tuple[str, dict[s
     return record.text, entities
 
 
-def create_instructions_for_record(record: rudrec.RuDReCRecord, is_sepate_labels: bool = False) -> list[dict[str, str]]:
+def create_instructions_for_record(record: rudrec.RuDReCRecord, is_separate_labels: bool = False) -> list[dict[str, str]]:
     text, entities = parse_entities_from_record(record)
-    if is_sepate_labels:
+    if is_separate_labels:
         record_instructions = []
         for entity_type in entities.keys():
             instruction = entity_type_to_instruction(entity_type)
@@ -39,30 +39,30 @@ def create_instructions_for_record(record: rudrec.RuDReCRecord, is_sepate_labels
         }
 
 
-def _fill_instructions_list(dataset: list[rudrec.RuDReCRecord], is_sepate_labels: bool) -> list[dict[str, str]]:
+def _fill_instructions_list(dataset: list[rudrec.RuDReCRecord], is_separate_labels: bool) -> list[dict[str, str]]:
     instructions = []
     for record in tqdm(dataset):
-        if is_sepate_labels:
-            instructions = np.concatenate((instructions, create_instructions_for_record(record, is_sepate_labels)))
+        if is_separate_labels:
+            instructions = np.concatenate((instructions, create_instructions_for_record(record, is_separate_labels)))
         else:
-            instructions.append(create_instructions_for_record(record, is_sepate_labels))
+            instructions.append(create_instructions_for_record(record, is_separate_labels))
         
     return instructions
 
 
-def create_instruct_dataset(filepath: str, max_instances: int = -1, is_sepate_labels: bool = False) -> list[dict[str, str]]:
+def create_instruct_dataset(filepath: str, max_instances: int = -1, is_separate_labels: bool = False) -> list[dict[str, str]]:
     rudrec_dataset = list(load_rudrec(filepath))
     
     if max_instances != 1 and len(rudrec_dataset) > max_instances:
         rudrec_dataset = rudrec_dataset[:max_instances]
         
-    return _fill_instructions_list(rudrec_dataset, is_sepate_labels)
+    return _fill_instructions_list(rudrec_dataset, is_separate_labels)
 
 
 def create_train_test_instruct_datasets(
         filepath: str,
         max_instances: int = -1,
-        is_sepate_labels: bool = False,
+        is_separate_labels: bool = False,
         test_size: float = 0.3,
         random_seed: int = 42
 ) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
@@ -73,7 +73,7 @@ def create_train_test_instruct_datasets(
         rudrec_dataset = rudrec_dataset[:max_instances]
         
     train_dataset, test_dataset = train_test_split(rudrec_dataset, test_size=test_size, random_state=random_seed)
-    return _fill_instructions_list(train_dataset, is_sepate_labels), _fill_instructions_list(test_dataset, is_sepate_labels)
+    return _fill_instructions_list(train_dataset, is_separate_labels), _fill_instructions_list(test_dataset, is_separate_labels)
 
 
 class InstructDataset(Dataset):
