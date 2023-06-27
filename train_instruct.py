@@ -6,7 +6,7 @@ import argparse
 from transformers import Trainer, TrainingArguments, TrainerCallback, TrainerState, TrainerControl
 from transformers.trainer_utils import PREFIX_CHECKPOINT_DIR
 from transformers import AutoTokenizer, AutoModelForCausalLM, DataCollatorForTokenClassification
-from peft import get_peft_model, LoraConfig, prepare_model_for_int8_training, PeftConfig, PeftModel
+from peft import prepare_model_for_int8_training, PeftConfig, PeftModel
 
 from flat_utils.instruct_dataset import InstructDataset, create_train_test_instruct_datasets
 from train_utils import fix_tokenizer, fix_model, set_random_seed

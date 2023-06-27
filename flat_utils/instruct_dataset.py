@@ -94,7 +94,7 @@ class InstructDataset(Dataset):
     def __getitem__(self, index):
         return self.processed_instructions[index]
         
-    def convert_instruction(self, instruction: dict):
+    def convert_instruction(self, instruction: dict[str, str]):
         inst = instruction['instruction']
         inp = instruction['input']
         target = instruction['output'].strip()
