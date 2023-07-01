@@ -4,7 +4,8 @@ from torch.utils.data import Dataset
 from tqdm import tqdm
 from corus import rudrec, load_rudrec
 from sklearn.model_selection import train_test_split
-from flat_utils.instruct_utils import ENTITY_TYPES, MODEL_INPUT_TEMPLATE, GENERAL_INSTRUCTION, entity_type_to_instruction, create_output_from_entities
+from flat_utils.instruct_utils import ENTITY_TYPES, MODEL_INPUT_TEMPLATE, GENERAL_INSTRUCTION
+from flat_utils.instruct_utils import entity_type_to_instruction, create_output_from_entities
 
 
 def parse_entities_from_record(record: rudrec.RuDReCRecord) -> tuple[str, dict[str, list]]:
@@ -77,15 +78,28 @@ def create_train_test_instruct_datasets(
 
 
 class InstructDataset(Dataset):
-    def __init__(self, instructions: list[dict[str, str]], tokenizer, only_target_loss: bool = True):
+    def __init__(
+        self,
+        instructions: list[dict[str, str]],
+        tokenizer,
+        model_type: str = 'llama',
+        only_target_loss: bool = True
+    ):
         self.instructions = instructions
         self.tokenizer = tokenizer
+        self.model_type = model_type
         self.only_target_loss = only_target_loss
         self.template = MODEL_INPUT_TEMPLATE
         self.processed_instructions = []
         
         for instruction in tqdm(self.instructions):
-            tensors = self.convert_instruction(instruction)
+            if self.model_type == 'llama':
+                tensors = self.convert_instruction_causal(instruction)
+            elif self.model_type == 't5':
+                tensors = self.convert_instruction_seq2seq(instruction)
+            else:
+                raise ValueError('model_type must be equals "llama" or "t5"')
+            
             self.processed_instructions.append(tensors)
             
     def __len__(self):
@@ -94,7 +108,7 @@ class InstructDataset(Dataset):
     def __getitem__(self, index):
         return self.processed_instructions[index]
         
-    def convert_instruction(self, instruction: dict[str, str]):
+    def convert_instruction_causal(self, instruction: dict[str, str]):
         inst = instruction['instruction']
         inp = instruction['input']
         target = instruction['output'].strip()
@@ -122,4 +136,21 @@ class InstructDataset(Dataset):
             "labels": labels,
             "attention_mask": attention_mask
         }
+    
+    def convert_instruction_seq2seq(self, instruction: dict[str, str]):
+        inst = instruction['instruction']
+        inp = instruction['input']
+        target = instruction['output'].strip()
         
+        source = self.template['prompts_input'].format(instruction=inst.strip(), inp=inp.strip())
+        inputs = self.tokenizer(source, add_special_tokens=True, padding=False, return_tensors="pt")
+        inputs = {k: v.squeeze(0) for k, v in inputs.items()}
+        
+        outputs = self.tokenizer(target, add_special_tokens=True, padding=False, return_tensors="pt")
+        labels = outputs["input_ids"].squeeze(0).tolist()
+        
+        if labels[-1] != self.tokenizer.eos_token_id:
+            labels.append(self.tokenizer.eos_token_id)
+        
+        inputs["labels"] = torch.LongTensor(labels)
+        return inputs
