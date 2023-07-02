@@ -9,8 +9,6 @@
         "logging_steps": 1,
         "learning_rate": 0.0003,
         "num_train_epochs": 1,
-        "lr_scheduler_type": "linear",
-        "warmup_steps": 50,
         "fp16": true,
         "bf16": false,
         "torch_compile": false,
@@ -21,12 +19,11 @@
         "lora_alpha": 16,
         "lora_dropout": 0.05,
         "bias": "none",
-        "target_modules": ["q_proj", "v_proj"],
-        "task_type": "CAUSAL_LM"
+        "target_modules": ["q", "v"],
+        "task_type": "SEQ_2_SEQ_LM"
     },
     "load_in_8bit": true,
-    "only_target_loss": true,
-    "model_name": "IlyaGusev/llama_7b_ru_turbo_alpaca_lora",
+    "model_name": "ai-forever/FRED-T5-1.7B",
     "max_source_tokens_count": 256,
     "max_target_tokens_count": 512
 }

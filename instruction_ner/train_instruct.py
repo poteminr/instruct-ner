@@ -43,15 +43,10 @@ def train(
         config = json.load(r)
 
     lora_config = config.get("lora")
-    callbacks = [SavePeftModelCallback] if lora_config else []
+
+    model_name = config['model_name']
     
-    if model_type == 't5':
-        model_name = 'ai-forever/FRED-T5-1.7B'
-        tokenizer = GPT2Tokenizer.from_pretrained(model_name,  eos_token='</s>')
-    else:
-        model_name = 'IlyaGusev/llama_7b_ru_turbo_alpaca_lora'
-        tokenizer = AutoTokenizer.from_pretrained(model_name)
-    
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
     tokenizer = fix_tokenizer(tokenizer)
 
     only_target_loss = config.get("only_target_loss", True)
@@ -62,6 +57,8 @@ def train(
     train_dataset = InstructDataset(
         train_instructions,
         tokenizer,
+        max_source_tokens_count=max_source_tokens_count,
+        max_target_tokens_count=max_target_tokens_count,
         model_type=model_type,
         only_target_loss=only_target_loss
     )
@@ -69,16 +66,21 @@ def train(
     val_dataset = InstructDataset(
         test_instructions,
         tokenizer,
+        max_source_tokens_count=max_source_tokens_count,
+        max_target_tokens_count=max_target_tokens_count,
         model_type=model_type,
         only_target_loss=only_target_loss
     )   
 
     if model_type == 'llama':
         data_collator = DataCollatorForTokenClassification(tokenizer, pad_to_multiple_of=8)
-    else:
+    elif model_type == 't5':
         data_collator = DataCollatorForSeq2Seq(tokenizer, pad_to_multiple_of=8)
-    
+    else:
+        raise ValueError('model_type must be equals "llama" or "t5"')
+
     load_in_8bit = bool(config.get("load_in_8bit", True))
+    
     if load_in_8bit:
         if model_type == "t5":
             model = T5ForConditionalGeneration.from_pretrained(
@@ -86,15 +88,7 @@ def train(
                 load_in_8bit=True,
                 device_map='auto'
             )
-            
-            peft_config = LoraConfig(
-                r=8,
-                lora_alpha=16,
-                target_modules=['q', 'v'],
-                lora_dropout=0.05,
-                bias="none",
-                task_type="SEQ_2_SEQ_LM"
-            ) 
+            peft_config = LoraConfig(**lora_config) 
             model = prepare_model_for_int8_training(model)
             model = get_peft_model(model, peft_config)
         else:
@@ -132,17 +126,17 @@ def train(
         deepspeed=deepspeed_config,
         **trainer_config
     )
-    #trainer = Seq2SeqTrainer()
+
     trainer = Trainer(
         model=model,
         args=training_args,
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
-        callbacks=callbacks,
+        callbacks=[SavePeftModelCallback],
         data_collator=data_collator
     )
 
-    with wandb.init(project="rulm_self_instruct", name=config_file) as run:
+    with wandb.init(project="Instruction NER") as run:
         model.print_trainable_parameters()
         trainer.train()
         model.push_to_hub(f"poteminr/{model_type}-rudrec", use_auth_token=True)
@@ -175,5 +169,5 @@ if __name__ == "__main__":
         output_dir=arguments.output_dir,
         seed=arguments.random_seed,
         config_file=arguments.config_file
-        )
+    )
     
