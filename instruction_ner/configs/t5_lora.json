@@ -24,6 +24,7 @@
     },
     "load_in_8bit": true,
     "model_name": "ai-forever/FRED-T5-1.7B",
+    "is_adapter": false,
     "max_source_tokens_count": 256,
     "max_target_tokens_count": 512
 }

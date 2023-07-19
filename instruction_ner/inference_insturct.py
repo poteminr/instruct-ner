@@ -1,14 +1,14 @@
 import argparse
 from transformers import AutoTokenizer, AutoModelForCausalLM, T5ForConditionalGeneration, GenerationConfig
 from peft import PeftConfig, PeftModel
-from flat_utils.instruct_dataset import create_instruct_dataset, InstructDataset
+from flat_utils.instruct_dataset import create_instruct_dataset
 from flat_utils.instruct_utils import MODEL_INPUT_TEMPLATE
 
 
 generation_config = {
-    "bos_token_id": 1,
+    # "bos_token_id": 1,
     "do_sample": True,
-    "eos_token_id": 2,
+    # "eos_token_id": 2,
     "max_new_tokens": 512,
     "no_repeat_ngram_size": 20,
     "num_beams": 3,

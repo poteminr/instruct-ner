@@ -71,29 +71,27 @@ def train(
         model_type=model_type,
         only_target_loss=only_target_loss
     )   
-
-    if model_type == 'llama':
-        data_collator = DataCollatorForTokenClassification(tokenizer, pad_to_multiple_of=8)
-    elif model_type == 't5':
-        data_collator = DataCollatorForSeq2Seq(tokenizer, pad_to_multiple_of=8)
-    else:
-        raise ValueError('model_type must be equals "llama" or "t5"')
+    
+    model_classes = {
+        'llama': {
+            'data_collator': DataCollatorForTokenClassification,
+            'model': AutoModelForCausalLM
+        },
+        't5': {
+            'data_collator': DataCollatorForSeq2Seq,
+            'model': T5ForConditionalGeneration
+        }
+    }
+    
+    data_collator = model_classes[model_type]['data_collator'](tokenizer, pad_to_multiple_of=8)
 
     load_in_8bit = bool(config.get("load_in_8bit", True))
-    
+    is_adapter = config['is_adapter']
+
     if load_in_8bit:
-        if model_type == "t5":
-            model = T5ForConditionalGeneration.from_pretrained(
-                model_name,
-                load_in_8bit=True,
-                device_map='auto'
-            )
-            peft_config = LoraConfig(**lora_config) 
-            model = prepare_model_for_int8_training(model)
-            model = get_peft_model(model, peft_config)
-        else:
+        if is_adapter:
             peft_config = PeftConfig.from_pretrained(model_name)
-            model = AutoModelForCausalLM.from_pretrained(
+            model = model_classes[model_type]['model'].from_pretrained(
                 peft_config.base_model_name_or_path,
                 load_in_8bit=True,
                 device_map='auto'
@@ -101,6 +99,16 @@ def train(
             model = fix_model(model, tokenizer, use_resize=False)
             model = prepare_model_for_int8_training(model)
             model = PeftModel.from_pretrained(model, model_name, is_trainable=True)
+        else:
+            model = model_classes[model_type]['model'].from_pretrained(
+                model_name,
+                load_in_8bit=True,
+                device_map='auto'
+            )
+            model = fix_model(model)
+            model = prepare_model_for_int8_training(model)
+            peft_config = LoraConfig(**lora_config) 
+            model = get_peft_model(model, peft_config)            
     else:
         model = AutoModelForCausalLM.from_pretrained(model_name)
         model = fix_model(model, tokenizer)
