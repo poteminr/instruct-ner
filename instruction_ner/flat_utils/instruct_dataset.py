@@ -35,8 +35,8 @@ def create_instructions_for_record(record: rudrec.RuDReCRecord, is_separate_labe
         return {
             'instruction': GENERAL_INSTRUCTION,
             'input': text,
-            # 'output': "{}".format(entities),
             'output': create_output_from_entities(entities, out_type=2),
+            'raw_entities': entities,
             'id': f"{record.sentence_id}_{record.file_name}"
         }
 
