@@ -20,9 +20,12 @@ GENERAL_INSTRUCTION = "Ты решаешь задачу NER. Извлеки из
 
 def create_output_from_entities(entities: list, out_type: int = 1) -> str:
     if out_type == 1:
-        return "{}".format(entities)[1:-1]
+        return ", ".join(entities)
     elif out_type == 2:
-        return SEP_SYMBOL.join(entities)
+        out = ""
+        for entity_type in entities.keys():
+            out += (f"{entity_type}: " + ", ".join(entities[entity_type]) + "\n")
+        return out.strip()
 
 
 def entity_type_to_instruction(entity_type: str) -> str:

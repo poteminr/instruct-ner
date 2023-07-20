@@ -16,8 +16,7 @@ def parse_entities_from_record(record: rudrec.RuDReCRecord) -> tuple[str, dict[s
     return record.text, entities
 
 
-def create_instructions_for_record(record: rudrec.RuDReCRecord, is_separate_labels: bool = False) -> list[
-    dict[str, str]]:
+def create_instructions_for_record(record: rudrec.RuDReCRecord, is_separate_labels: bool = False) -> list[dict[str, str]]:
     text, entities = parse_entities_from_record(record)
     if is_separate_labels:
         record_instructions = []
@@ -36,7 +35,8 @@ def create_instructions_for_record(record: rudrec.RuDReCRecord, is_separate_labe
         return {
             'instruction': GENERAL_INSTRUCTION,
             'input': text,
-            'output': "{}".format(entities),
+            # 'output': "{}".format(entities),
+            'output': create_output_from_entities(entities, out_type=2),
             'id': f"{record.sentence_id}_{record.file_name}"
         }
 
@@ -52,8 +52,7 @@ def _fill_instructions_list(dataset: list[rudrec.RuDReCRecord], is_separate_labe
     return instructions
 
 
-def create_instruct_dataset(filepath: str, max_instances: int = -1, is_separate_labels: bool = False) -> list[
-    dict[str, str]]:
+def create_instruct_dataset(filepath: str, max_instances: int = -1, is_separate_labels: bool = False) -> list[dict[str, str]]:
     rudrec_dataset = list(load_rudrec(filepath))
 
     if max_instances != 1 and len(rudrec_dataset) > max_instances:

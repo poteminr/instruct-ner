@@ -6,7 +6,7 @@ import argparse
 from transformers import Trainer, TrainingArguments, TrainerCallback, TrainerState, TrainerControl, GPT2Tokenizer, T5ForConditionalGeneration
 from transformers.trainer_utils import PREFIX_CHECKPOINT_DIR
 from transformers import AutoTokenizer, AutoModelForCausalLM, DataCollatorForTokenClassification, DataCollatorForSeq2Seq
-from peft import get_peft_model, prepare_model_for_int8_training, LoraConfig, PeftConfig, PeftModel
+from peft import get_peft_model, prepare_model_for_kbit_training, LoraConfig, PeftConfig, PeftModel
 
 from flat_utils.instruct_dataset import InstructDataset, create_train_test_instruct_datasets
 from train_utils import fix_tokenizer, fix_model, set_random_seed
@@ -97,7 +97,7 @@ def train(
                 device_map='auto'
             )
             model = fix_model(model, tokenizer, use_resize=False)
-            model = prepare_model_for_int8_training(model)
+            model = prepare_model_for_kbit_training(model)
             model = PeftModel.from_pretrained(model, model_name, is_trainable=True)
         else:
             model = model_classes[model_type]['model'].from_pretrained(
@@ -106,7 +106,7 @@ def train(
                 device_map='auto'
             )
             model = fix_model(model)
-            model = prepare_model_for_int8_training(model)
+            model = prepare_model_for_kbit_training(model)
             peft_config = LoraConfig(**lora_config) 
             model = get_peft_model(model, peft_config)            
     else:
@@ -147,6 +147,8 @@ def train(
     with wandb.init(project="Instruction NER") as run:
         model.print_trainable_parameters()
         trainer.train()
+        if 'llama2' in config_file:
+            model_type = 'llama2'
         model.push_to_hub(f"poteminr/{model_type}-rudrec", use_auth_token=True)
         tokenizer.push_to_hub(f"poteminr/{model_type}-rudrec", use_auth_token=True)
         
