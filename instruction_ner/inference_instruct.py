@@ -1,3 +1,4 @@
+import re
 import argparse
 from transformers import AutoTokenizer, AutoModelForCausalLM, T5ForConditionalGeneration, GenerationConfig
 from peft import PeftConfig, PeftModel
@@ -18,6 +19,29 @@ generation_config = {
     "top_k": 30,
     "top_p": 0.85,
 }
+
+
+def extract_classes(input_string):
+    answer_start_idx = input_string.find('Ответ')
+    input_string = input_string[answer_start_idx+8:]
+    classes = {
+        "Drugname": [],
+        "Drugclass": [],
+        "Drugform": [],
+        "DI": [],
+        "ADR": [],
+        "Finding": []
+    }
+
+    pattern = r"(Drugname|Drugclass|Drugform|DI|ADR|Finding):\s(.*?)(?=\n\w+:\s|$)"
+    matches = re.findall(pattern, input_string)
+
+    for class_name, value in matches:
+        values = value.strip().split(', ')
+        if values != ['']:
+            classes[class_name] = values
+
+    return classes
 
 
 if __name__ == "__main__":
@@ -65,6 +89,10 @@ if __name__ == "__main__":
         early_stopping=True,
     )
     for s in generation_output.sequences:
-        print(tokenizer.decode(s, skip_special_tokens=True))
-    print("TARGET:")
-    print(target)
+        string_output = tokenizer.decode(s, skip_special_tokens=True)
+        print(string_output)
+        
+        print("TARGET:")
+        print(target)
+        print("Extracted:")
+        print(extract_classes(string_output))
