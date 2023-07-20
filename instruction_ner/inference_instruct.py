@@ -1,7 +1,7 @@
 import argparse
 from transformers import AutoTokenizer, AutoModelForCausalLM, T5ForConditionalGeneration, GenerationConfig
 from peft import PeftConfig, PeftModel
-from flat_utils.instruct_dataset import create_instruct_dataset
+from flat_utils.instruct_dataset import create_train_test_instruct_datasets
 from flat_utils.instruct_utils import MODEL_INPUT_TEMPLATE
 
 
@@ -24,12 +24,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--rudrec_path", default='data/rudrec/rudrec_annotated.json', type=str, help='train file_path')
     parser.add_argument("--model_type", default='llama', type=str, help='model type')
+    parser.add_argument("--model_name", default='poteminr/llama2-rudrec', type=str, help='model name from hf')
     parser.add_argument("--rudrec_index", default=0, type=int, help='index of instruction')
+    
     arguments = parser.parse_args()
 
-    model_name = f'poteminr/{arguments.model_type}-rudrec'
+    model_name = arguments.model_name
     
-    peft_config = PeftConfig.from_pretrained(model_name)
+    peft_config = PeftConfig.from_pretrained(arguments.model_name)
     base_model_name = peft_config.base_model_name_or_path
     
     models = {'llama': AutoModelForCausalLM, 't5': T5ForConditionalGeneration}
@@ -44,7 +46,9 @@ if __name__ == "__main__":
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model.eval()
     
-    instruction = create_instruct_dataset(arguments.rudrec_path)[arguments.rudrec_index]
+    _, test_dataset = create_train_test_instruct_datasets(arguments.rudrec_path)
+    
+    instruction = test_dataset[arguments.rudrec_index]
     inst = instruction['instruction']
     inp = instruction['input']
     target = instruction['output'].strip()
@@ -62,3 +66,5 @@ if __name__ == "__main__":
     )
     for s in generation_output.sequences:
         print(tokenizer.decode(s, skip_special_tokens=True))
+    print("TARGET:")
+    print(target)

@@ -70,7 +70,7 @@ def create_train_test_instruct_datasets(
 ) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
     rudrec_dataset = list(load_rudrec(filepath))
 
-    if max_instances != 1 and len(rudrec_dataset) > max_instances:
+    if max_instances != -1 and len(rudrec_dataset) > max_instances:
         rudrec_dataset = rudrec_dataset[:max_instances]
 
     train_dataset, test_dataset = train_test_split(rudrec_dataset, test_size=test_size, random_state=random_seed)
