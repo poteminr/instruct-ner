@@ -25,7 +25,7 @@
         "task_type": "CAUSAL_LM"
     },
     "load_in_8bit": true,
-    "only_target_loss": true,
+    "only_target_loss": false,
     "model_name": "meta-llama/Llama-2-7b-hf",
     "is_adapter": false,
     "max_source_tokens_count": 256,

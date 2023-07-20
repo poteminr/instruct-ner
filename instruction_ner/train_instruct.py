@@ -105,7 +105,7 @@ def train(
                 load_in_8bit=True,
                 device_map='auto'
             )
-            model = fix_model(model)
+            model = fix_model(model, tokenizer, use_resize=False)
             model = prepare_model_for_kbit_training(model)
             peft_config = LoraConfig(**lora_config) 
             model = get_peft_model(model, peft_config)            
