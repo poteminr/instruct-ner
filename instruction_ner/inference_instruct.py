@@ -6,7 +6,7 @@ from tqdm import tqdm
 import pandas as pd
 from flat_utils.instruct_dataset import create_train_test_instruct_datasets
 from flat_utils.instruct_utils import MODEL_INPUT_TEMPLATE
-# from metric import calculate_metrics
+
 
 generation_config = {
     # "bos_token_id": 1,
@@ -53,8 +53,6 @@ if __name__ == "__main__":
     parser.add_argument("--model_name", default='poteminr/llama2-rudrec', type=str, help='model name from hf')
     parser.add_argument("--max_instances", default=-1, type=int, help='max number of instruction')
     parser.add_argument("--callback", default=False, type=bool, help='print predictions')
-
-    
     arguments = parser.parse_args()
 
     model_name = arguments.model_name
@@ -82,7 +80,6 @@ if __name__ == "__main__":
     target_list = []
     instruction_ids = []
     for instruction in tqdm(test_dataset):
-        # instruction = test_dataset[arguments.rudrec_index]
         inst = instruction['instruction']
         inp = instruction['input']
         target = instruction['output'].strip()
@@ -91,7 +88,6 @@ if __name__ == "__main__":
         source = MODEL_INPUT_TEMPLATE['prompts_input'].format(instruction=inst.strip(), inp=inp.strip())
         input_ids = tokenizer(source, return_tensors="pt")["input_ids"].cuda()
         
-        # print("Generating...")
         generation_output = model.generate(
             input_ids=input_ids,
             generation_config=GenerationConfig(**generation_config),
