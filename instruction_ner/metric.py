@@ -1,7 +1,9 @@
 import pandas as pd
 
 
-def calculate_metrics(extracted_list, target_list, labels):
+def calculate_metrics(extracted_list, target_list, labels=None):
+    if labels is None:
+        labels = ['Drugname', 'Drugclass', 'Drugform', 'DI', 'ADR', 'Finding']
     overall_metrics = {label: {'tp': 0, 'fp': 0, 'fn': 0} for label in labels}
     
     for extracted, target in zip(extracted_list, target_list):
@@ -50,7 +52,5 @@ if __name__ == '__main__':
     target_list = [{'Drugname': ['d'], 'Drugclass': [], 'Drugform': [], 'DI': ['сидеть не могла', 'боли'], 'ADR': [], 'Finding': []},
                 {'Drugname': [], 'Drugclass': [], 'Drugform': [], 'DI': ['сидеть не могла', 'боли'], 'ADR': [], 'Finding': []}]
 
-    labels = ['Drugname', 'Drugclass', 'Drugform', 'DI', 'ADR', 'Finding']
-
-    metrics = calculate_metrics(extracted_list, target_list, labels)
+    metrics = calculate_metrics(extracted_list, target_list)
     print(metrics)
