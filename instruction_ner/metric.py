@@ -1,3 +1,6 @@
+import pandas as pd
+
+
 def calculate_metrics(extracted_list, target_list, labels):
     overall_metrics = {label: {'tp': 0, 'fp': 0, 'fn': 0} for label in labels}
     
@@ -32,6 +35,13 @@ def calculate_metrics(extracted_list, target_list, labels):
         results[label] = {'precision': precision, 'recall': recall, 'f1': f1}
     
     return results
+
+def calculate_metrics_from_dataframe(dataframe: pd.DataFrame, labels=None):
+    if labels is None:
+        labels = ['Drugname', 'Drugclass', 'Drugform', 'DI', 'ADR', 'Finding']
+        
+    return calculate_metrics(dataframe['extracted'].values, dataframe['target'].values, labels)
+
 
 if __name__ == '__main__':
     extracted_list = [{'Drugname': ['d'], 'Drugclass': [], 'Drugform': [], 'DI': ['боли'], 'ADR': [], 'Finding': []},

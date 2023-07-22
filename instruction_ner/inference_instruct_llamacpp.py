@@ -42,7 +42,8 @@ if __name__ == "__main__":
 
     model = Llama(
         model_path=arguments.model_path,
-        n_ctx=512,
+        n_gpu_layers = 35,
+        n_ctx=2048,
         n_parts=1,
         use_mmap=False,
     )
