@@ -69,7 +69,7 @@ if __name__ == "__main__":
                 temp=generation_config.temperature,
                 repeat_penalty=generation_config.repetition_penalty,
                 reset=True,
-            )
+        )
 
         completion_tokens = []
         for i, token in enumerate(generator):

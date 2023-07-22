@@ -5,4 +5,4 @@ __pycache__
 .vscode
 data
 Datasets Exploration.ipynb
-prediction.json
+predictions
