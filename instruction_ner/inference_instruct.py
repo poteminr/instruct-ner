@@ -9,21 +9,6 @@ from peft import PeftConfig, PeftModel
 from flat_utils.instruct_dataset import create_train_test_instruct_datasets
 
 
-generation_config = {
-    # "bos_token_id": 1,
-    "do_sample": True,
-    # "eos_token_id": 2,
-    "max_new_tokens": 512,
-    "no_repeat_ngram_size": 20,
-    "num_beams": 3,
-    "pad_token_id": 0,
-    "repetition_penalty": 1.1,
-    "temperature": 0.9,
-    "top_k": 30,
-    "top_p": 0.85,
-}
-
-
 def extract_classes(input_string):
     answer_start_idx = input_string.find('Ответ')
     input_string = input_string[answer_start_idx+8:]
@@ -63,6 +48,7 @@ if __name__ == "__main__":
     arguments = parser.parse_args()
 
     model_name = arguments.model_name
+    generation_config = GenerationConfig.from_pretrained(model_name)
     
     peft_config = PeftConfig.from_pretrained(arguments.model_name)
     base_model_name = peft_config.base_model_name_or_path
@@ -104,7 +90,7 @@ if __name__ == "__main__":
         with torch.no_grad():
             generation_output = model.generate(
                 input_ids=input_ids,
-                generation_config=GenerationConfig(**generation_config),
+                generation_config=generation_config,
                 return_dict_in_generate=True,
                 eos_token_id=tokenizer.eos_token_id,
                 early_stopping=True,
