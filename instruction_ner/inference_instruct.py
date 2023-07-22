@@ -1,11 +1,12 @@
 import re
 import argparse
+import torch
+import numpy as np
+import pandas as pd
+from tqdm import tqdm
 from transformers import AutoTokenizer, AutoModelForCausalLM, T5ForConditionalGeneration, GenerationConfig
 from peft import PeftConfig, PeftModel
-from tqdm import tqdm
-import pandas as pd
 from flat_utils.instruct_dataset import create_train_test_instruct_datasets
-from flat_utils.instruct_utils import MODEL_INPUT_TEMPLATE
 
 
 generation_config = {
@@ -46,13 +47,19 @@ def extract_classes(input_string):
     return classes
 
 
+def batch(iterable, n=4):
+    l = len(iterable)
+    for ndx in range(0, l, n):
+        yield iterable[ndx:min(ndx + n, l)]
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--rudrec_path", default='data/rudrec/rudrec_annotated.json', type=str, help='train file_path')
     parser.add_argument("--model_type", default='llama', type=str, help='model type')
     parser.add_argument("--model_name", default='poteminr/llama2-rudrec', type=str, help='model name from hf')
+    parser.add_argument("--prediction_path", default='prediction.json', type=str, help='path for saving prediction')
     parser.add_argument("--max_instances", default=-1, type=int, help='max number of instruction')
-    parser.add_argument("--callback", default=False, type=bool, help='print predictions')
     arguments = parser.parse_args()
 
     model_name = arguments.model_name
@@ -70,7 +77,9 @@ if __name__ == "__main__":
     
     model = PeftModel.from_pretrained(model, model_name)
     tokenizer = AutoTokenizer.from_pretrained(model_name)
+    
     model.eval()
+    model = torch.compile(model)
     
     _, test_dataset = create_train_test_instruct_datasets(arguments.rudrec_path)
     if arguments.max_instances != -1 and arguments.max_instances < len(test_dataset):
@@ -79,41 +88,33 @@ if __name__ == "__main__":
     extracted_list = []
     target_list = []
     instruction_ids = []
+    sources = []
+    
     for instruction in tqdm(test_dataset):
-        inst = instruction['instruction']
-        inp = instruction['input']
-        target = instruction['output'].strip()
-        raw_entities = instruction['raw_entities']
-
-        source = MODEL_INPUT_TEMPLATE['prompts_input'].format(instruction=inst.strip(), inp=inp.strip())
-        input_ids = tokenizer(source, return_tensors="pt")["input_ids"].cuda()
+        target_list.append(instruction['raw_entities'])
+        instruction_ids.append(instruction['id'])
+        sources.append(instruction['source'])
         
-        generation_output = model.generate(
-            input_ids=input_ids,
-            generation_config=GenerationConfig(**generation_config),
-            return_dict_in_generate=True,
-            eos_token_id=tokenizer.eos_token_id,
-            early_stopping=True,
-        )
+    target_list = list(batch(target_list))
+    instruction_ids = list(batch(instruction_ids))    
+    sources = list(batch(sources))
+    
+    for source in tqdm(sources):
+        input_ids = tokenizer(source, return_tensors="pt", padding=True)["input_ids"].cuda()
+        with torch.no_grad():
+            generation_output = model.generate(
+                input_ids=input_ids,
+                generation_config=GenerationConfig(**generation_config),
+                return_dict_in_generate=True,
+                eos_token_id=tokenizer.eos_token_id,
+                early_stopping=True,
+            )
         for s in generation_output.sequences:
             string_output = tokenizer.decode(s, skip_special_tokens=True)
-            extracted_entities = extract_classes(string_output)
-
-            if arguments.callback:
-                print(string_output)
-                print("TARGET:")
-                print(target)
-                print("Extracted:")
-                print(extracted_entities)
-                print("Extracted Target")
-                print(raw_entities)
-            
-            extracted_list.append([extracted_entities])
-            target_list.append([raw_entities])
-            instruction_ids.append(instruction['id'])
+            extracted_list.append(extract_classes(string_output))
     
     pd.DataFrame({
-        'id': instruction_ids, 
+        'id': np.concatenate(instruction_ids), 
         'extracted': extracted_list,
-        'target': target_list
-    }).to_json('prediction.json')
+        'target': np.concatenate(target_list)
+    }).to_json(arguments.prediction_path)

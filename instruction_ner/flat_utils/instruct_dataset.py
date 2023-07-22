@@ -22,11 +22,11 @@ def create_instructions_for_record(record: rudrec.RuDReCRecord, is_separate_labe
         record_instructions = []
         for entity_type in entities.keys():
             instruction = entity_type_to_instruction(entity_type)
-            output = create_output_from_entities(entities[entity_type])
             record_instructions.append({
                 'instruction': instruction,
                 'input': text,
-                'output': output,
+                'output': create_output_from_entities(entities[entity_type]).strip(),
+                'source': MODEL_INPUT_TEMPLATE['prompts_input'].format(instruction=instruction.strip(), inp=text.strip()),
                 'label': entity_type,
                 'id': f"{record.sentence_id}_{record.file_name}"
             })
@@ -35,7 +35,8 @@ def create_instructions_for_record(record: rudrec.RuDReCRecord, is_separate_labe
         return {
             'instruction': GENERAL_INSTRUCTION,
             'input': text,
-            'output': create_output_from_entities(entities, out_type=2),
+            'output': create_output_from_entities(entities, out_type=2).strip(),
+            'source': MODEL_INPUT_TEMPLATE['prompts_input'].format(instruction=GENERAL_INSTRUCTION.strip(), inp=text.strip()),
             'raw_entities': entities,
             'id': f"{record.sentence_id}_{record.file_name}"
         }
@@ -55,7 +56,7 @@ def _fill_instructions_list(dataset: list[rudrec.RuDReCRecord], is_separate_labe
 def create_instruct_dataset(filepath: str, max_instances: int = -1, is_separate_labels: bool = False) -> list[dict[str, str]]:
     rudrec_dataset = list(load_rudrec(filepath))
 
-    if max_instances != 1 and len(rudrec_dataset) > max_instances:
+    if max_instances != -1 and len(rudrec_dataset) > max_instances:
         rudrec_dataset = rudrec_dataset[:max_instances]
 
     return _fill_instructions_list(rudrec_dataset, is_separate_labels)
@@ -96,7 +97,6 @@ class InstructDataset(Dataset):
         self.model_type = model_type
         self.only_target_loss = only_target_loss
         self.padding = padding
-        self.template = MODEL_INPUT_TEMPLATE
 
         self.processed_instructions = []
 
@@ -117,11 +117,9 @@ class InstructDataset(Dataset):
         return self.processed_instructions[index]
 
     def convert_instruction_causal(self, instruction: dict[str, str]):
-        inst = instruction['instruction']
-        inp = instruction['input']
-        target = instruction['output'].strip()
-
-        source = self.template['prompts_input'].format(instruction=inst.strip(), inp=inp.strip())
+        target = instruction['output']
+        source = instruction['source']        
+        
         source_tokens = self.tokenizer(
             source,
             add_special_tokens=False,
@@ -169,11 +167,9 @@ class InstructDataset(Dataset):
         }
 
     def convert_instruction_seq2seq(self, instruction: dict[str, str]):
-        inst = instruction['instruction']
-        inp = instruction['input']
-        target = instruction['output'].strip()
-
-        source = self.template['prompts_input'].format(instruction=inst.strip(), inp=inp.strip())
+        target = instruction['output']
+        source = instruction['source']
+        
         inputs = self.tokenizer(
             source,
             add_special_tokens=True,
