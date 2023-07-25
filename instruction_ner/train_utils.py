@@ -4,7 +4,6 @@ import torch
 import numpy as np
 
 
-
 # code from https://github.com/IlyaGusev/rulm/blob/master/self_instruct/src/util/dl.py
 def set_random_seed(seed):
     random.seed(seed)
@@ -34,16 +33,25 @@ def fix_tokenizer(tokenizer):
         if tokenizer.sep_token_id in (None, tokenizer.vocab_size) and "sep" in token:
             special_tokens["sep_token"] = token
 
-    if tokenizer.sep_token_id in (None, tokenizer.vocab_size) and "bos_token" in special_tokens:
+    if (
+        tokenizer.sep_token_id in (None, tokenizer.vocab_size)
+        and "bos_token" in special_tokens
+    ):
         special_tokens["sep_token"] = special_tokens["bos_token"]
 
-    if tokenizer.pad_token_id in (None, tokenizer.vocab_size) and "pad_token" not in special_tokens:
+    if (
+        tokenizer.pad_token_id in (None, tokenizer.vocab_size)
+        and "pad_token" not in special_tokens
+    ):
         if tokenizer.unk_token_id is not None:
             special_tokens["pad_token"] = tokenizer.unk_token
         else:
             special_tokens["pad_token"] = "<|pad|>"
 
-    if tokenizer.sep_token_id in (None, tokenizer.vocab_size) and "sep_token" not in special_tokens:
+    if (
+        tokenizer.sep_token_id in (None, tokenizer.vocab_size)
+        and "sep_token" not in special_tokens
+    ):
         if tokenizer.bos_token_id is not None:
             special_tokens["sep_token"] = tokenizer.bos_token
         else:

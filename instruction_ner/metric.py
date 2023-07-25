@@ -38,9 +38,14 @@ def calculate_metrics(extracted_list, target_list, labels=None):
     
     return results
 
-def calculate_metrics_from_dataframe(dataframe: pd.DataFrame, labels=None):
+
+def calculate_metrics_from_dataframe(dataframe: pd.DataFrame, labels=None, skip_empty=False):
     if labels is None:
         labels = ['Drugname', 'Drugclass', 'Drugform', 'DI', 'ADR', 'Finding']
+        
+    if skip_empty:
+        empty_template = {'Drugname': [], 'Drugclass': [], 'Drugform': [], 'DI': [], 'ADR': [], 'Finding': []}
+        dataframe = dataframe[dataframe['target'] != empty_template]
         
     return calculate_metrics(dataframe['extracted'].values, dataframe['target'].values, labels)
 
