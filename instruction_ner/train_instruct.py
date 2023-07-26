@@ -35,7 +35,7 @@ class SavePeftModelCallback(TrainerCallback):
         peft_model_path = os.path.join(checkpoint_folder, "adapter_model")
         kwargs["model"].save_pretrained(peft_model_path)
         return control
-     
+
 
 def train(
     train_instructions: list[dict[str, str]],
@@ -43,7 +43,8 @@ def train(
     model_type: str,
     output_dir: str,
     seed: int,
-    config_file: str
+    config_file: str,
+    push_to_hub: bool
 ):
     set_random_seed(seed)
     with open(config_file, "r") as r:
@@ -91,8 +92,8 @@ def train(
         max_target_tokens_count=max_target_tokens_count,
         model_type=model_type,
         only_target_loss=only_target_loss
-    )   
-    
+    )
+
     model_classes = {
         'llama': {
             'data_collator': DataCollatorForTokenClassification,
@@ -170,8 +171,9 @@ def train(
         trainer.train()
         if 'llama2' in config_file:
             model_type = 'llama2'
-        model.push_to_hub(f"poteminr/{model_type}-rudrec", use_auth_token=True)
-        tokenizer.push_to_hub(f"poteminr/{model_type}-rudrec", use_auth_token=True)
+        if push_to_hub:
+            model.push_to_hub(f"poteminr/{model_type}-rudrec", use_auth_token=True)
+            tokenizer.push_to_hub(f"poteminr/{model_type}-rudrec", use_auth_token=True)
         
         
 if __name__ == "__main__":
@@ -183,8 +185,9 @@ if __name__ == "__main__":
     parser.add_argument("--config_file", default='configs/llama_7b_lora.json', type=str, help='path to config file')
     parser.add_argument("--model_type", default='llama', type=str, help='model type')
     parser.add_argument("--max_instances", default=-1, type=int, help='max number of rudrec records')
+    parser.add_argument("--push_to_hub", default=False, type=bool, help='push to hugginface hub')
     arguments = parser.parse_args()
-    
+
     train_dataset, test_dataset = create_train_test_instruct_datasets(
         filepath=arguments.rudrec_path,
         max_instances=arguments.max_instances,
@@ -198,6 +201,7 @@ if __name__ == "__main__":
         model_type=arguments.model_type,
         output_dir=arguments.output_dir,
         seed=arguments.random_seed,
-        config_file=arguments.config_file
+        config_file=arguments.config_file,
+        push_to_hub=arguments.push_to_hub
     )
     
