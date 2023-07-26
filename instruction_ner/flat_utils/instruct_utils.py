@@ -18,14 +18,14 @@ MODEL_INPUT_TEMPLATE = {
 GENERAL_INSTRUCTION = "Ты решаешь задачу NER. Извлеки из текста слова, относящиеся к каждой из следующих сущностей: Drugname, Drugclass, DI, ADR, Finding."
 
 
-def create_output_from_entities(entities: list, out_type: int = 1) -> str:
+def create_output_from_entities(entities: dict[str, list], out_type: int = 1) -> str:
     if out_type == 1:
         return ", ".join(entities)
     elif out_type == 2:
         out = ""
         for entity_type in entities.keys():
             out += (f"{entity_type}: " + ", ".join(entities[entity_type]) + "\n")
-        return out.strip()
+        return out
 
 
 def entity_type_to_instruction(entity_type: str) -> str:

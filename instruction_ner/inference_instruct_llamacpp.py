@@ -5,29 +5,7 @@ from tqdm import tqdm
 from transformers import GenerationConfig
 from llama_cpp import Llama
 from flat_utils.instruct_dataset import create_train_test_instruct_datasets
-
-
-def extract_classes(input_string):
-    answer_start_idx = input_string.find('Ответ')
-    input_string = input_string[answer_start_idx+8:]
-    classes = {
-        "Drugname": [],
-        "Drugclass": [],
-        "Drugform": [],
-        "DI": [],
-        "ADR": [],
-        "Finding": []
-    }
-
-    pattern = r"(Drugname|Drugclass|Drugform|DI|ADR|Finding):\s(.*?)(?=\n\w+:\s|$)"
-    matches = re.findall(pattern, input_string)
-
-    for class_name, value in matches:
-        values = value.strip().split(', ')
-        if values != ['']:
-            classes[class_name] = values
-
-    return classes
+from metric import extract_classes
 
 
 if __name__ == "__main__":

@@ -1,15 +1,22 @@
+import argparse
 import json
 import os
-import wandb
+
+import numpy as np
 import torch
-import argparse
-from transformers import Trainer, TrainingArguments, TrainerCallback, TrainerState, TrainerControl, GPT2Tokenizer, T5ForConditionalGeneration
+import wandb
+from peft import (LoraConfig, PeftConfig, PeftModel, get_peft_model,
+                  prepare_model_for_kbit_training)
+from train_utils import fix_model, fix_tokenizer, set_random_seed
+from transformers import (AutoModelForCausalLM, AutoTokenizer,
+                          DataCollatorForSeq2Seq,
+                          DataCollatorForTokenClassification, EvalPrediction,
+                          T5ForConditionalGeneration, Trainer, TrainerCallback,
+                          TrainerControl, TrainerState, TrainingArguments)
 from transformers.trainer_utils import PREFIX_CHECKPOINT_DIR
-from transformers import AutoTokenizer, AutoModelForCausalLM, DataCollatorForTokenClassification, DataCollatorForSeq2Seq
-from peft import get_peft_model, prepare_model_for_kbit_training, LoraConfig, PeftConfig, PeftModel
 
 from flat_utils.instruct_dataset import InstructDataset, create_train_test_instruct_datasets
-from train_utils import fix_tokenizer, fix_model, set_random_seed
+from metric import calculate_metrics, extract_classes
 
 
 # https://github.com/huggingface/peft/issues/96
@@ -43,17 +50,31 @@ def train(
         config = json.load(r)
 
     lora_config = config.get("lora")
-
     model_name = config['model_name']
     
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     tokenizer = fix_tokenizer(tokenizer)
 
-    only_target_loss = config.get("only_target_loss", True)
+    def compute_metrics(eval_prediction: EvalPrediction, tokenizer=tokenizer):
+        predictions = np.argmax(eval_prediction.predictions, axis=-1)
+        labels = predictions.label_ids
+
+        extracted_entities = []
+        target_entities = []
+        for ind, pred in enumerate(predictions):
+            non_masked_indices = (labels[ind] != -100)
+            pred = tokenizer.decode(pred, skip_special_tokens=True)
+            label = tokenizer.decode(labels[ind][non_masked_indices], skip_special_tokens=True)
+
+            extracted_entities.append(extract_classes(pred))
+            target_entities.append(extract_classes(label))
+
+        return calculate_metrics(extracted_entities, target_entities, return_only_f1=True)
     
+    only_target_loss = config.get("only_target_loss", True)
     max_source_tokens_count = config["max_source_tokens_count"]
     max_target_tokens_count = config["max_target_tokens_count"]
-
+    
     train_dataset = InstructDataset(
         train_instructions,
         tokenizer,
@@ -87,7 +108,6 @@ def train(
 
     load_in_8bit = bool(config.get("load_in_8bit", True))
     is_adapter = config['is_adapter']
-
     if load_in_8bit:
         if is_adapter:
             peft_config = PeftConfig.from_pretrained(model_name)
@@ -112,7 +132,7 @@ def train(
     else:
         model = AutoModelForCausalLM.from_pretrained(model_name)
         model = fix_model(model, tokenizer)
-
+    
     # Default model generation params
     model.config.num_beams = 5
     max_tokens_count = max_target_tokens_count + max_source_tokens_count + 1
@@ -141,9 +161,10 @@ def train(
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
         callbacks=[SavePeftModelCallback],
-        data_collator=data_collator
+        data_collator=data_collator,
+        compute_metrics=compute_metrics
     )
-
+    
     with wandb.init(project="Instruction NER") as run:
         model.print_trainable_parameters()
         trainer.train()
@@ -162,7 +183,6 @@ if __name__ == "__main__":
     parser.add_argument("--config_file", default='configs/llama_7b_lora.json', type=str, help='path to config file')
     parser.add_argument("--model_type", default='llama', type=str, help='model type')
     parser.add_argument("--max_instances", default=-1, type=int, help='max number of rudrec records')
-
     arguments = parser.parse_args()
     
     train_dataset, test_dataset = create_train_test_instruct_datasets(
