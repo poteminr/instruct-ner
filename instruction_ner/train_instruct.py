@@ -58,7 +58,7 @@ def train(
 
     def compute_metrics(eval_prediction: EvalPrediction, tokenizer=tokenizer):
         predictions = np.argmax(eval_prediction.predictions, axis=-1)
-        labels = predictions.label_ids
+        labels = eval_prediction.label_ids
 
         extracted_entities = []
         target_entities = []
