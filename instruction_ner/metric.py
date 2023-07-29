@@ -1,10 +1,13 @@
 import re
 from typing import Optional
 import pandas as pd
+from flat_utils.instruct_utils import MODEL_INPUT_TEMPLATE
 
 
 def extract_classes(input_string: str) -> dict[str, str]:
-    answer_start_idx = input_string.find('Ответ')
+    if input_string.endswith(":"):
+        input_string += " \n"
+    answer_start_idx = input_string.find(MODEL_INPUT_TEMPLATE['output_separator'])
     input_string = input_string[answer_start_idx+8:]
     classes = {
         "Drugname": [],
