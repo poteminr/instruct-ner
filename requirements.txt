@@ -1,5 +1,3 @@
-streamlit
-spacy_streamlit
 transformers
 datasets
 razdel
@@ -7,8 +5,9 @@ corus
 pandas
 numpy
 torch
-youtube_dl
-whisper
 pybrat
 peft
 wandb
+sentencepiece
+accelerate
+bitsandbytes
