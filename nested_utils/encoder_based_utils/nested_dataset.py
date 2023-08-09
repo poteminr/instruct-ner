@@ -1,7 +1,7 @@
 import torch
 from pybrat.parser import BratParser
 from transformers import AutoTokenizer
-from nested_utils.reader_utils import text_preprocess_function, parse_example
+from encoder_based_utils.reader_utils import text_preprocess_function, parse_example
 
 
 class NerelBioDataset(torch.utils.data.Dataset):

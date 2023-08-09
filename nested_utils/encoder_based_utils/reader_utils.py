@@ -2,7 +2,7 @@ import re
 import numpy as np
 import torch
 from pybrat.parser import Example
-from nested_utils.tagset import TAGS
+from nested_utils.encoder_based_utils.tagset import TAGS
 
 
 def text_preprocess_function(text: str) -> str:
