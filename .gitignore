@@ -6,7 +6,3 @@ __pycache__
 data
 Datasets Exploration.ipynb
 predictions
-nested_utils/tokenizers
-nested_utils/ners.txt
-nested_utils/data_exp.ipynb
-nested_utils

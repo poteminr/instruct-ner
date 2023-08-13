@@ -1,4 +1,3 @@
-SEP_SYMBOL = ' | '
 ENTITY_TYPES = ['Drugname', 'Drugclass', 'Drugform', 'DI', 'ADR', 'Finding']
 ENTITY_DEFENITIONS = [
     'упоминания торговой марки лекарства или ингредиенты/активные соединения продукта',
@@ -9,23 +8,7 @@ ENTITY_DEFENITIONS = [
     'и не связаны с излечиваемыми симптомами (побочные эффекты)',
     'любые побочные эффекты или симптомы, которые не были непосредственно испытаны пациентом'
     ]
-
-MODEL_INPUT_TEMPLATE = {
-            'prompts_input': "### Задание: {instruction}\n### Вход: {inp}\n### Ответ: ",
-            'output_separator':  "Ответ: "        
-        }
-
-GENERAL_INSTRUCTION = "Ты решаешь задачу NER. Извлеки из текста слова, относящиеся к каждой из следующих сущностей: Drugname, Drugclass, DI, ADR, Finding."
-
-
-def create_output_from_entities(entities: dict[str, list], out_type: int = 1) -> str:
-    if out_type == 1:
-        return ", ".join(entities)
-    elif out_type == 2:
-        out = ""
-        for entity_type in entities.keys():
-            out += (f"{entity_type}: " + ", ".join(entities[entity_type]) + "\n")
-        return out
+INSTRUCTION_TEXT = "Ты решаешь задачу NER. Извлеки из текста слова, относящиеся к каждой из следующих сущностей: Drugname, Drugclass, DI, ADR, Finding."
 
 
 def entity_type_to_instruction(entity_type: str) -> str:
