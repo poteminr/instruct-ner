@@ -6,7 +6,7 @@ import pandas as pd
 from tqdm import tqdm
 from transformers import AutoTokenizer, AutoModelForCausalLM, T5ForConditionalGeneration, GenerationConfig
 from peft import PeftConfig, PeftModel
-from flat_utils.instruct_dataset import create_train_test_instruct_datasets
+from utils.instruct_dataset import create_train_test_instruct_datasets
 from metric import extract_classes
 
 

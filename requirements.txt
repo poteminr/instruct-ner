@@ -11,3 +11,4 @@ wandb
 sentencepiece
 accelerate
 bitsandbytes
+llama_cpp

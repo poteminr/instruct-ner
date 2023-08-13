@@ -1,7 +1,7 @@
 import re
 from typing import Optional
 import pandas as pd
-from flat_utils.instruct_utils import MODEL_INPUT_TEMPLATE
+from utils.instruct_utils import MODEL_INPUT_TEMPLATE
 
 
 def extract_classes(input_string: str) -> dict[str, str]:

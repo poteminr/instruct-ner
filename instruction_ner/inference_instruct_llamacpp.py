@@ -4,7 +4,7 @@ import pandas as pd
 from tqdm import tqdm
 from transformers import GenerationConfig
 from llama_cpp import Llama
-from flat_utils.instruct_dataset import create_train_test_instruct_datasets
+from utils.instruct_dataset import create_train_test_instruct_datasets
 from metric import extract_classes
 
 
