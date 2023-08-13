@@ -57,8 +57,8 @@ def _fill_instructions_list(dataset: list[rudrec.RuDReCRecord], is_separate_labe
     return instructions
 
 
-def create_instruct_dataset(filepath: str, max_instances: int = -1, is_separate_labels: bool = False) -> list[Instruction]:
-    rudrec_dataset = list(load_rudrec(filepath))
+def create_instruct_dataset(data_path: str, max_instances: int = -1, is_separate_labels: bool = False) -> list[Instruction]:
+    rudrec_dataset = list(load_rudrec(data_path))
     
     if max_instances != -1 and len(rudrec_dataset) > max_instances:
         rudrec_dataset = rudrec_dataset[:max_instances]
@@ -67,13 +67,13 @@ def create_instruct_dataset(filepath: str, max_instances: int = -1, is_separate_
 
 
 def create_train_test_instruct_datasets(
-    filepath: str,
+    data_path: str,
     max_instances: int = -1,
     is_separate_labels: bool = False,
     test_size: float = 0.3,
     random_seed: int = 42
 ) -> tuple[list[Instruction], list[Instruction]]:
-    rudrec_dataset = list(load_rudrec(filepath))
+    rudrec_dataset = list(load_rudrec(data_path))
     
     if max_instances != -1 and len(rudrec_dataset) > max_instances:
         rudrec_dataset = rudrec_dataset[:max_instances]

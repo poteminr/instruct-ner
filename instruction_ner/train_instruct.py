@@ -15,7 +15,7 @@ from transformers import (AutoModelForCausalLM, AutoTokenizer,
                           TrainerControl, TrainerState, TrainingArguments)
 from transformers.trainer_utils import PREFIX_CHECKPOINT_DIR
 
-from flat_utils.instruct_dataset import InstructDataset, create_train_test_instruct_datasets
+from utils.instruct_dataset import InstructDataset, Instruction
 from metric import calculate_metrics, extract_classes
 
 
@@ -38,9 +38,10 @@ class SavePeftModelCallback(TrainerCallback):
 
 
 def train(
-    train_instructions: list[dict[str, str]],
-    test_instructions: list[dict[str, str]],
+    train_instructions: list[Instruction],
+    test_instructions: list[Instruction],
     model_type: str,
+    dataset_name: str,
     output_dir: str,
     seed: int,
     config_file: str,
@@ -172,33 +173,43 @@ def train(
         if 'llama2' in config_file:
             model_type = 'llama2'
         if push_to_hub:
-            model.push_to_hub(f"poteminr/{model_type}-rudrec", use_auth_token=True)
-            tokenizer.push_to_hub(f"poteminr/{model_type}-rudrec", use_auth_token=True)
+            model.push_to_hub(f"poteminr/{model_type}-{dataset_name}", use_auth_token=True)
+            tokenizer.push_to_hub(f"poteminr/{model_type}-{dataset_name}", use_auth_token=True)
         
         
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--rudrec_path", default='data/rudrec/rudrec_annotated.json', type=str, help='train file_path')
-    parser.add_argument("--output_dir", default='models/llama-rudrec', type=str, help='output_dir')
+    parser.add_argument("--dataset_name", default='rudrec', type=str, help='name of dataset')
+    parser.add_argument("--data_path", default='data/rudrec/rudrec_annotated.json', type=str, help='train file_path')
+    parser.add_argument("--output_dir", default='models/', type=str, help='output_dir')
     parser.add_argument("--test_size", default=0.3, type=float, help='test_size')
     parser.add_argument("--random_seed", default=42, type=int, help='random_seed')
     parser.add_argument("--config_file", default='configs/llama_7b_lora.json', type=str, help='path to config file')
     parser.add_argument("--model_type", default='llama', type=str, help='model type')
-    parser.add_argument("--max_instances", default=-1, type=int, help='max number of rudrec records')
+    parser.add_argument("--max_instances", default=-1, type=int, help='max number of instructions')
     parser.add_argument("--push_to_hub", default=False, type=bool, help='push to hugginface hub')
     arguments = parser.parse_args()
 
-    train_dataset, test_dataset = create_train_test_instruct_datasets(
-        filepath=arguments.rudrec_path,
-        max_instances=arguments.max_instances,
-        test_size=arguments.test_size,
-        random_seed=arguments.random_seed
-    )
-    
+    if arguments.dataset_name == 'rudrec':
+        from utils.rudrec.rudrec_reader import create_train_test_instruct_datasets
+        train_dataset, test_dataset = create_train_test_instruct_datasets(
+            data_path=arguments.data_path,
+            max_instances=arguments.max_instances,
+            test_size=arguments.test_size,
+            random_seed=arguments.random_seed
+        )       
+    else:
+        from utils.nerel_bio.nerel_reader import create_instruct_dataset
+        train_path = os.path.join(arguments.data_path, 'train')
+        test_path = os.path.join(arguments.data_path, 'test')
+        train_dataset = create_instruct_dataset(train_path, max_instances=arguments.max_instances)
+        test_dataset = create_instruct_dataset(test_path, max_instances=arguments.max_instances)
+        
     train(
         train_instructions=train_dataset,
         test_instructions=test_dataset,
         model_type=arguments.model_type,
+        dataset_name=arguments.dataset_name,
         output_dir=arguments.output_dir,
         seed=arguments.random_seed,
         config_file=arguments.config_file,

@@ -62,17 +62,18 @@ def create_instructions_for_example(example: Example) -> list[Instruction]:
 def _fill_instructions_list(examples: list[Example]) -> list[Instruction]:
     instructions = []
     for example in tqdm(examples):
-            instructions.append(create_instructions_for_example(example))
+            instructions.extend(create_instructions_for_example(example))
 
     return instructions
 
 def create_instruct_dataset(data_path: str, max_instances: int = -1) -> list[Instruction]:
     examples = parse_examples(data_path)
+    instructions = _fill_instructions_list(examples)
     
-    if max_instances != -1 and len(examples) > max_instances:
-        examples = examples[:max_instances]
+    if max_instances != -1 and len(instructions) > max_instances:
+        instructions = instructions[:max_instances]
 
-    return _fill_instructions_list(examples)
+    return instructions
 
 
 def create_train_test_instruct_datasets(
