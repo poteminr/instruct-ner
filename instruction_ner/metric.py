@@ -4,21 +4,16 @@ import pandas as pd
 from utils.instruct_utils import MODEL_INPUT_TEMPLATE
 
 
-def extract_classes(input_string: str) -> dict[str, str]:
+def extract_classes(input_string: str, entity_types: list[str]) -> dict[str, str]:
     if input_string.endswith(":"):
         input_string += " \n"
     answer_start_idx = input_string.find(MODEL_INPUT_TEMPLATE['output_separator'])
-    input_string = input_string[answer_start_idx+8:]
-    classes = {
-        "Drugname": [],
-        "Drugclass": [],
-        "Drugform": [],
-        "DI": [],
-        "ADR": [],
-        "Finding": []
-    }
+    output_separator_length = len(MODEL_INPUT_TEMPLATE['output_separator'])
+    input_string = input_string[answer_start_idx+output_separator_length+1:] # input string should start with class tag
+    
+    classes = { k:[] for k in entity_types}
 
-    pattern = r"(Drugname|Drugclass|Drugform|DI|ADR|Finding):\s(.*?)(?=\n\w+:\s|$)"
+    pattern = rf"({'|'.join(entity_types)}):\s(.*?)(?=\n\w+:\s|$)"
     matches = re.findall(pattern, input_string)
 
     for class_name, value in matches:
@@ -32,15 +27,17 @@ def extract_classes(input_string: str) -> dict[str, str]:
 def calculate_metrics(
     extracted_entities: list[dict[str, str]],
     target_entities: list[dict[str, str]],
+    entity_types: list[str],
     return_only_f1: bool = False,
-    labels: Optional[list[str]] = None
 ) -> dict[str, dict[str, float]]:
-    if labels is None:
-        labels = ['Drugname', 'Drugclass', 'Drugform', 'DI', 'ADR', 'Finding']
 
-    overall_metrics = {label: {'tp': 0, 'fp': 0, 'fn': 0} for label in labels}
+    
+    assert isinstance(extracted_entities, list), f'expected a type list, but got {type(extracted_entities)}'
+    assert isinstance(target_entities, list), f'expected a type list, but got {type(target_entities)}'
+
+    overall_metrics = {label: {'tp': 0, 'fp': 0, 'fn': 0} for label in entity_types}
     for extracted, target in zip(extracted_entities, target_entities):
-        for label in labels:
+        for label in entity_types:
             pred_set = set(extracted[label])
             target_set = set(target[label])
 
@@ -58,7 +55,7 @@ def calculate_metrics(
             overall_metrics[label]['fn'] += fn
 
     results = {}
-    for label in labels:
+    for label in entity_types:
         tp = overall_metrics[label]['tp']
         fp = overall_metrics[label]['fp']
         fn = overall_metrics[label]['fn']
@@ -77,11 +74,11 @@ def calculate_metrics(
 
 def calculate_metrics_from_dataframe(
     dataframe: pd.DataFrame,
-    labels: Optional[list[str]] = None,
+    entity_types: list[str],
     skip_empty: bool = False
 ) -> dict[str, dict[str, float]]:
     if skip_empty:
-        empty_template = {'Drugname': [], 'Drugclass': [], 'Drugform': [], 'DI': [], 'ADR': [], 'Finding': []}
+        empty_template = {k: [] for k in entity_types}
         dataframe = dataframe[dataframe['target'] != empty_template]
 
-    return calculate_metrics(dataframe['extracted'].values, dataframe['target'].values, labels)
+    return calculate_metrics(dataframe['extracted'].values, dataframe['target'].values, entity_types)
