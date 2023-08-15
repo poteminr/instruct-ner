@@ -6,7 +6,8 @@ import pandas as pd
 from tqdm import tqdm
 from transformers import AutoTokenizer, AutoModelForCausalLM, T5ForConditionalGeneration, GenerationConfig
 from peft import PeftConfig, PeftModel
-from utils.instruct_dataset import create_train_test_instruct_datasets
+from utils.rudrec.rudrec_reader import create_train_test_instruct_datasets
+from utils.rudrec.rudrec_utis import ENTITY_TYPES
 from metric import extract_classes
 
 
@@ -75,7 +76,7 @@ if __name__ == "__main__":
             )
         for s in generation_output.sequences:
             string_output = tokenizer.decode(s, skip_special_tokens=True)
-            extracted_list.append(extract_classes(string_output))
+            extracted_list.append(extract_classes(string_output, ENTITY_TYPES))
     
     pd.DataFrame({
         'id': np.concatenate(instruction_ids), 

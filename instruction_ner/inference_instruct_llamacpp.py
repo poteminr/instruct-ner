@@ -4,7 +4,8 @@ import pandas as pd
 from tqdm import tqdm
 from transformers import GenerationConfig
 from llama_cpp import Llama
-from utils.instruct_dataset import create_train_test_instruct_datasets
+from utils.rudrec.rudrec_reader import create_train_test_instruct_datasets
+from utils.rudrec.rudrec_utis import ENTITY_TYPES
 from metric import extract_classes
 
 
@@ -56,7 +57,7 @@ if __name__ == "__main__":
                 break
             
         completion_tokens = model.detokenize(completion_tokens).decode("utf-8")
-        extracted_list.append(extract_classes(completion_tokens))
+        extracted_list.append(extract_classes(completion_tokens), ENTITY_TYPES)
         instruction_ids.append(instruction['id'])
         target_list.append(instruction['raw_entities'])
     
