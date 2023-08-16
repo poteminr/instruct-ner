@@ -16,7 +16,7 @@ from transformers import (AutoModelForCausalLM, AutoTokenizer,
 from transformers.trainer_utils import PREFIX_CHECKPOINT_DIR
 
 from utils.instruct_dataset import InstructDataset, Instruction
-from metric import calculate_metrics, extract_classes
+# from metric import calculate_metrics, extract_classes
 
 
 # https://github.com/huggingface/peft/issues/96
