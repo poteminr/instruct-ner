@@ -1,5 +1,5 @@
 import re
-from typing import Optional
+from collections import defaultdict
 import pandas as pd
 from utils.instruct_utils import MODEL_INPUT_TEMPLATE
 
@@ -31,12 +31,14 @@ def calculate_metrics(
     return_only_f1: bool = False,
 ) -> dict[str, dict[str, float]]:
 
-    
-    assert isinstance(extracted_entities, list), f'expected a type list, but got {type(extracted_entities)}'
-    assert isinstance(target_entities, list), f'expected a type list, but got {type(target_entities)}'
+    assert not isinstance(extracted_entities, dict), f'expected a type list, but got {type(extracted_entities)}'
+    assert not isinstance(target_entities, dict), f'expected a type list, but got {type(target_entities)}'
 
     overall_metrics = {label: {'tp': 0, 'fp': 0, 'fn': 0} for label in entity_types}
     for extracted, target in zip(extracted_entities, target_entities):
+        if len(target.keys()) != len(extracted.keys()) and not isinstance(target, defaultdict):
+            target = defaultdict(list, target)
+
         for label in entity_types:
             pred_set = set(extracted[label])
             target_set = set(target[label])
