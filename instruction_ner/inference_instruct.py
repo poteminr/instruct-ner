@@ -10,7 +10,6 @@ from peft import PeftConfig, PeftModel
 from utils.rudrec.rudrec_reader import create_train_test_instruct_datasets
 from utils.nerel_bio.nerel_reader import create_instruct_dataset
 
-# from utils.rudrec.rudrec_utis import ENTITY_TYPES
 from metric import extract_classes
 
 
@@ -28,6 +27,7 @@ if __name__ == "__main__":
     parser.add_argument("--model_name", default='poteminr/llama2-rudrec', type=str, help='model name from hf')
     parser.add_argument("--prediction_path", default='prediction.json', type=str, help='path for saving prediction')
     parser.add_argument("--max_instances", default=-1, type=int, help='max number of instruction')
+    parser.add_argument("--batch_size", default=4, type=int, help='number of instructions in batch')
     arguments = parser.parse_args()
 
     model_name = arguments.model_name
@@ -71,9 +71,9 @@ if __name__ == "__main__":
         instruction_ids.append(instruction['id'])
         sources.append(instruction['source'])
         
-    target_list = list(batch(target_list))
-    instruction_ids = list(batch(instruction_ids))    
-    sources = list(batch(sources))
+    target_list = list(batch(target_list, arguments.batch_size))
+    instruction_ids = list(batch(instruction_ids, arguments.batch_size))    
+    sources = list(batch(sources, arguments.batch_size))
     
     for source in tqdm(sources):
         input_ids = tokenizer(source, return_tensors="pt", padding=True)["input_ids"].cuda()
