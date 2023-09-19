@@ -58,7 +58,7 @@ if __name__ == "__main__":
         target_list.append(instruction['raw_entities'])
         instruction_ids.append(instruction['id'])
         sources.append(instruction['source'])
-    
+
     outputs = model.generate(sources, sampling_params)
     for output in outputs:
         prompt = output.prompt
