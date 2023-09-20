@@ -1,7 +1,7 @@
 <div align="center">
 
 ![image](images/medner_logo_v1.png "Title")
-# Insturct NER
+# Instruct NER
 
 Solution of complex [Named Entity Recognition](https://paperswithcode.com/task/named-entity-recognition-ner) tasks (and subtask [Nested NER](https://paperswithcode.com/task/nested-named-entity-recognition)) based on modern Large Language Models (LLMs). 
 </div>
