@@ -9,7 +9,7 @@ Solution of complex [Named Entity Recognition](https://paperswithcode.com/task/n
 ## Table of contents
 
 - [Insturct Dataset](#insturct-dataset)
-<!-- - [Get Started](#get-started) -->
+- [Results](#results)
 
 
 ## Insturct Dataset
@@ -89,3 +89,23 @@ class Instruction(TypedDict):
   'Finding': []},
  'id': '1_2555494.tsv'}
  ```
+
+ ## Results
+ ### 1. [Russian Drug Reaction Corpus (RuDReC)](https://github.com/cimm-kzn/RuDReC)
+
+ ### Llama2  7b
+ ||Drugname|Drugclass|Drugform|DI|ADR|Finding|
+|---|---|---|---|---|---|---|
+|precision|0.967025|0.995604|0.955377|0.875091|0.998498|0.961349|
+|recall|0.919564|0.938536|0.901311|0.797073|0.849298|0.956643|
+|f1|0.942697|0.966228|0.927557|0.834262|0.917874|0.958991|
+
+### rubert-tiny2 29.4 M
+||Drugname|Drugclass|Drugform|DI|ADR|Finding|
+|---|---|---|---|---|---|---|
+|precision|0.941215|0.991730|0.989078|0.876774|0.897867|0.977305|
+|recall|0.974692|0.992414|0.993146|0.898215|0.921088|0.958275|
+|f1|0.957661|0.992072|0.991108|0.887365|0.909329|0.967697|
+
+### 2. [NEREL-BIO](https://github.com/nerel-ds/NEREL-BIO) (Nested Named Entities)
+Soon
