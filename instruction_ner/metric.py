@@ -38,6 +38,7 @@ def calculate_metrics(
     for extracted, target in zip(extracted_entities, target_entities):
         if len(target.keys()) != len(extracted.keys()) and not isinstance(target, defaultdict):
             target = defaultdict(list, target)
+            extracted = defaultdict(list, extracted)
 
         for label in entity_types:
             pred_set = set(extracted[label])
