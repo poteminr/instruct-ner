@@ -10,6 +10,7 @@ Solution of complex [Named Entity Recognition](https://paperswithcode.com/task/n
 
 - [Insturct Dataset](#insturct-dataset)
 - [Results](#results)
+- [Models](#models)
 
 
 ## Insturct Dataset
@@ -109,3 +110,11 @@ class Instruction(TypedDict):
 
 ### 2. [NEREL-BIO](https://github.com/nerel-ds/NEREL-BIO) (Nested Named Entities)
 Soon
+
+## Models
+* [poteminr/llama2-rudrec](https://huggingface.co/poteminr/llama2-rudrec) adapter model (LoRA)
+* [poteminr/llama2-rudrec-merged](https://huggingface.co/poteminr/llama2-rudrec-merged) merged with [base model](https://huggingface.co/meta-llama/Llama-2-7b-hf) 
+
+
+and other models on HF such as T5 Llama:
+[poteminr](https://huggingface.co/poteminr)
