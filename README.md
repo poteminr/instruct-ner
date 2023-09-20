@@ -24,7 +24,7 @@ Russian:
 >Ты решаешь задачу NER. Извлеки из текста слова, относящиеся к каждой из следующих сущностей: Drugname, Drugclass, DI, ADR, Finding.
 
 English:
->`You are solving the NER problem. Extract from the text words related to each of the following entities: Drugname, Drugclass, DI, ADR, Finding.`
+>You are solving the NER problem. Extract from the text words related to each of the following entities: Drugname, Drugclass, DI, ADR, Finding.
 
 ### 2. Build `dictionary with labels`. 
 You can use one of two supported version.
