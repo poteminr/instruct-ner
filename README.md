@@ -93,7 +93,7 @@ class Instruction(TypedDict):
  ## Results
  ### 1. [Russian Drug Reaction Corpus (RuDReC)](https://github.com/cimm-kzn/RuDReC)
 
- ### Llama2  7B
+ ### Llama2 7B with LoRA
  ||Drugname|Drugclass|Drugform|DI|ADR|Finding|
 |---|---|---|---|---|---|---|
 |precision|0.967025|0.995604|0.955377|0.875091|0.998498|0.961349|
