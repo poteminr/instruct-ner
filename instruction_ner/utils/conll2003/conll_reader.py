@@ -1,11 +1,8 @@
 from tqdm import tqdm
-import datasets
-from datasets import Dataset
-from typing import Union
+from datasets import Dataset, load_dataset
 
 from utils.instruct_dataset import Instruction
 from utils.conll2003.conll_utils import ENTITY_TYPES, INSTRUCTION_TEXT, TAGSET
-
 from utils.instruct_utils import MODEL_INPUT_TEMPLATE, create_output_from_entities
 
 
@@ -59,7 +56,7 @@ def _fill_instructions_list(dataset: Dataset) -> list[Instruction]:
     return instructions
 
 def create_instruct_dataset(split: str, max_instances: int = -1) -> list[Instruction]:
-    dataset = datasets.load_dataset('conll2003', split=split)    
+    dataset = load_dataset('conll2003', split=split)    
     instructions = _fill_instructions_list(dataset)
     
     if max_instances != -1 and len(instructions) > max_instances:
