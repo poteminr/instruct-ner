@@ -7,7 +7,7 @@ import torch
 import wandb
 from peft import (LoraConfig, PeftConfig, PeftModel, get_peft_model,
                   prepare_model_for_kbit_training)
-from train_utils import fix_model, fix_tokenizer, set_random_seed
+from train_utils import fix_model, fix_tokenizer, set_random_seed, SUPPORTED_DATASETS
 from transformers import (AutoModelForCausalLM, AutoTokenizer,
                           DataCollatorForSeq2Seq,
                           DataCollatorForTokenClassification, EvalPrediction,
@@ -190,6 +190,8 @@ if __name__ == "__main__":
     parser.add_argument("--push_to_hub", default=False, type=bool, help='push to hugginface hub')
     arguments = parser.parse_args()
 
+    assert arguments.dataset_name in SUPPORTED_DATASETS, f'expected dataset name from {SUPPORTED_DATASETS}'
+
     if arguments.dataset_name == 'rudrec':
         from utils.rudrec.rudrec_reader import create_train_test_instruct_datasets
         train_dataset, test_dataset = create_train_test_instruct_datasets(
@@ -198,13 +200,17 @@ if __name__ == "__main__":
             test_size=arguments.test_size,
             random_seed=arguments.random_seed
         )       
-    else:
+    elif arguments.dataset_name =='nerel_bio':
         from utils.nerel_bio.nerel_reader import create_instruct_dataset
         train_path = os.path.join(arguments.data_path, 'train')
         test_path = os.path.join(arguments.data_path, 'test')
         train_dataset = create_instruct_dataset(train_path, max_instances=arguments.max_instances)
         test_dataset = create_instruct_dataset(test_path, max_instances=arguments.max_instances)
-        
+    else:
+        from utils.conll2003.conll_reader import create_instruct_dataset
+        train_dataset = create_instruct_dataset(split='train', max_instances=arguments.max_instances)
+        test_dataset = create_instruct_dataset(split='validation', max_instances=arguments.max_instances)
+
     train(
         train_instructions=train_dataset,
         test_instructions=test_dataset,

@@ -4,6 +4,9 @@ import torch
 import numpy as np
 
 
+SUPPORTED_DATASETS = ['rudrec', 'nerel_bio', 'conll2003']
+
+
 # code from https://github.com/IlyaGusev/rulm/blob/master/self_instruct/src/util/dl.py
 def set_random_seed(seed):
     random.seed(seed)
