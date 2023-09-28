@@ -1,4 +1,3 @@
-import re
 import os
 import argparse
 import torch
@@ -7,11 +6,9 @@ import pandas as pd
 from tqdm import tqdm
 from transformers import AutoTokenizer, AutoModelForCausalLM, T5ForConditionalGeneration, GenerationConfig
 from peft import PeftConfig, PeftModel
-from utils.rudrec.rudrec_reader import create_train_test_instruct_datasets
-from utils.nerel_bio.nerel_reader import create_instruct_dataset
 
 from metric import extract_classes
-
+from train_utils import SUPPORTED_DATASETS
 
 def batch(iterable, n=4):
     l = len(iterable)
@@ -29,6 +26,8 @@ if __name__ == "__main__":
     parser.add_argument("--max_instances", default=-1, type=int, help='max number of instruction')
     parser.add_argument("--batch_size", default=4, type=int, help='number of instructions in batch')
     arguments = parser.parse_args()
+
+    assert arguments.dataset_name in SUPPORTED_DATASETS, f'expected dataset name from {SUPPORTED_DATASETS}'
 
     model_name = arguments.model_name
     generation_config = GenerationConfig.from_pretrained(model_name)
@@ -50,16 +49,28 @@ if __name__ == "__main__":
     model.eval()
     model = torch.compile(model)
     
+    if torch.cuda.device_count() > 1:
+        model.is_parallelizable = True
+        model.model_parallel = True
+    
     if arguments.dataset_name == 'rudrec': 
+        from utils.rudrec.rudrec_reader import create_train_test_instruct_datasets
         from utils.rudrec.rudrec_utis import ENTITY_TYPES
+
         _, test_dataset = create_train_test_instruct_datasets(arguments.data_path)
         if arguments.max_instances != -1 and arguments.max_instances < len(test_dataset):
             test_dataset = test_dataset[:arguments.max_instances]
-    else:
+    elif arguments.dataset_name == 'nerel_bio':
+        from utils.nerel_bio.nerel_reader import create_instruct_dataset
         from utils.nerel_bio.nerel_bio_utils import ENTITY_TYPES
+        
         test_path = os.path.join(arguments.data_path, 'test')
         test_dataset = create_instruct_dataset(test_path, max_instances=arguments.max_instances)
-
+    else:
+        from utils.conll2003.conll_reader import create_instruct_dataset
+        from utils.conll2003.conll_utils import ENTITY_TYPES
+        
+        test_dataset = create_instruct_dataset(split='test', max_instances=arguments.max_instances)
     
     extracted_list = []
     target_list = []
@@ -70,10 +81,10 @@ if __name__ == "__main__":
         target_list.append(instruction['raw_entities'])
         instruction_ids.append(instruction['id'])
         sources.append(instruction['source'])
-        
-    target_list = list(batch(target_list, arguments.batch_size))
-    instruction_ids = list(batch(instruction_ids, arguments.batch_size))    
-    sources = list(batch(sources, arguments.batch_size))
+       
+    target_list = list(batch(target_list, n=arguments.batch_size))
+    instruction_ids = list(batch(instruction_ids, n=arguments.batch_size))    
+    sources = list(batch(sources, n=arguments.batch_size))
     
     for source in tqdm(sources):
         input_ids = tokenizer(source, return_tensors="pt", padding=True)["input_ids"].cuda()
