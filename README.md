@@ -91,7 +91,11 @@ class Instruction(TypedDict):
   'Finding': []},
  'id': '1_2555494.tsv'}
  ```
-
+### Implemented datasets
+`instruction_ner/utils/`
+1. [Russian Drug Reaction Corpus (RuDReC)](https://github.com/cimm-kzn/RuDReC)
+2. [NEREL-BIO](https://github.com/nerel-ds/NEREL-BIO) (Nested Named Entities)
+3. [CoNLL-2003](https://paperswithcode.com/dataset/conll-2003)
  ## Results
  ### 1. [Russian Drug Reaction Corpus (RuDReC)](https://github.com/cimm-kzn/RuDReC)
 
@@ -111,7 +115,8 @@ class Instruction(TypedDict):
 
 ### 2. [NEREL-BIO](https://github.com/nerel-ds/NEREL-BIO) (Nested Named Entities)
 Soon
-
+### 3. [CoNLL-2003](https://paperswithcode.com/dataset/conll-2003)
+Soon
 ### Restrictions
 Instruction LLM for NER performs well on flat entities, but performs poorly on datasets with large tagset and nested entites. It's hard to output all entities in a single response due to performance limitations.
 
