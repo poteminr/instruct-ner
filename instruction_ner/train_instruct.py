@@ -133,7 +133,7 @@ def train(
             model = get_peft_model(model, peft_config)            
     else:
         model = AutoModelForCausalLM.from_pretrained(model_name)
-        model = fix_model(model, tokenizer)
+        model = fix_model(model, tokenizer, use_resize=False)
     
     # Default model generation params
     model.config.num_beams = 5
