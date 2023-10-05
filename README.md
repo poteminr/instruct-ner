@@ -114,7 +114,7 @@ class Instruction(TypedDict):
 |f1|0.957661|0.992072|0.991108|0.887365|0.909329|0.967697|
 
 ### 2. [NEREL-BIO](https://github.com/nerel-ds/NEREL-BIO) (Nested Named Entities)
-Soon
+LLM doesn't produce structured output due to the large tagset (40 entities) and nested subentities. 
 ### 3. [CoNLL-2003](https://paperswithcode.com/dataset/conll-2003)
 Soon
 ### Restrictions
