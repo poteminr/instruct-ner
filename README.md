@@ -10,6 +10,7 @@ Solution of complex [Named Entity Recognition](https://paperswithcode.com/task/n
 
 - [Insturct Dataset](#insturct-dataset)
 - [Results](#results)
+    - [Restrictions](#restrictions)
 - [Models](#models)
 
 
@@ -111,6 +112,10 @@ class Instruction(TypedDict):
 ### 2. [NEREL-BIO](https://github.com/nerel-ds/NEREL-BIO) (Nested Named Entities)
 Soon
 
+### Restrictions
+Instruction LLM for NER performs well on flat entities, but performs poorly on datasets with large tagset and nested entites. It's hard to output all entities in a single response due to performance limitations.
+
+Thus, LLM and encoder model produce comparable results on flat-ner datasets with incredibly different training and inference times. 
 ## Models
 * [poteminr/llama2-rudrec](https://huggingface.co/poteminr/llama2-rudrec) adapter model (LoRA)
 * [poteminr/llama2-rudrec-merged](https://huggingface.co/poteminr/llama2-rudrec-merged) merged with [base model](https://huggingface.co/meta-llama/Llama-2-7b-hf) 
