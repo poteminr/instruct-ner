@@ -116,7 +116,8 @@ def train(
             model = model_classes[model_type]['model'].from_pretrained(
                 peft_config.base_model_name_or_path,
                 load_in_8bit=True,
-                device_map='auto'
+                device_map='auto',
+                use_flash_attention_2=True
             )
             model = fix_model(model, tokenizer, use_resize=False)
             model = prepare_model_for_kbit_training(model)
