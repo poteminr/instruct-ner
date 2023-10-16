@@ -9,6 +9,7 @@ Solution of complex [Named Entity Recognition](https://paperswithcode.com/task/n
 ## Table of contents
 
 - [Insturct Dataset](#insturct-dataset)
+- [Automatic calculation of metrics](#automatic-calculation-of-metrics)
 - [Results](#results)
     - [Restrictions](#restrictions)
 - [Models](#models)
@@ -96,6 +97,33 @@ class Instruction(TypedDict):
 1. [Russian Drug Reaction Corpus (RuDReC)](https://github.com/cimm-kzn/RuDReC)
 2. [NEREL-BIO](https://github.com/nerel-ds/NEREL-BIO) (Nested Named Entities)
 3. [CoNLL-2003](https://paperswithcode.com/dataset/conll-2003)
+## Automatic calculation of metrics
+`instruction_ner/metric.py`
+
+You can use the implemented functions with the output of inference_instruct calculate metrics. 
+```python
+import pandas as pd
+from utils.rudrec.rudrec_utis import ENTITY_TYPES
+from metric import calculate_metrics_from_dataframe
+
+prediction = pd.read_json('prediction.json')
+prediction.head(3)
+```
+|    | id            | extracted                                                                                                 | target                                                                                                    |
+|---:|:--------------|:----------------------------------------------------------------------------------------------------------|:----------------------------------------------------------------------------------------------------------|
+|  0 | 8_1443820.tsv | {'Drugname': [], 'Drugclass': [], 'Drugform': ['таблетки'], 'DI': [], 'ADR': [], 'Finding': []}           | {'Drugname': [], 'Drugclass': [], 'Drugform': ['таблетки'], 'DI': [], 'ADR': [], 'Finding': []}           |
+|  1 | 1_2555494.tsv | {'Drugname': ['Римантадин'], 'Drugclass': [], 'Drugform': ['сиропе'], 'DI': [], 'ADR': [], 'Finding': []} | {'Drugname': ['Римантадин'], 'Drugclass': [], 'Drugform': ['сиропе'], 'DI': [], 'ADR': [], 'Finding': []} |
+|  2 | 1_618967.tsv  | {'Drugname': [], 'Drugclass': [], 'Drugform': [], 'DI': [], 'ADR': [], 'Finding': []}                     | {'Drugname': [], 'Drugclass': [], 'Drugform': [], 'DI': [], 'ADR': [], 'Finding': []}                     |
+
+```python
+from metric import calculate_metrics_from_dataframe
+metrics = calculate_metrics_from_dataframe(prediction, ENTITY_TYPES)
+```
+```python
+{'Drugname': {'precision': 0.9670250896057347,
+  'recall': 0.9195637355146558,
+  'f1': 0.9426974143955277}, ...}
+```
  ## Results
  ### 1. [Russian Drug Reaction Corpus (RuDReC)](https://github.com/cimm-kzn/RuDReC)
 
