@@ -41,6 +41,7 @@ def train(
     train_instructions: list[Instruction],
     test_instructions: list[Instruction],
     model_type: str,
+    use_flash_attention_2: bool,
     dataset_name: str,
     output_dir: str,
     seed: int,
@@ -100,6 +101,10 @@ def train(
             'data_collator': DataCollatorForTokenClassification,
             'model': AutoModelForCausalLM
         },
+        'mistral': {
+            'data_collator': DataCollatorForTokenClassification,
+            'model': AutoModelForCausalLM
+        },
         't5': {
             'data_collator': DataCollatorForSeq2Seq,
             'model': T5ForConditionalGeneration
@@ -117,7 +122,7 @@ def train(
                 peft_config.base_model_name_or_path,
                 load_in_8bit=True,
                 device_map='auto',
-                use_flash_attention_2=True
+                use_flash_attention_2=use_flash_attention_2
             )
             model = fix_model(model, tokenizer, use_resize=False)
             model = prepare_model_for_kbit_training(model)
@@ -127,7 +132,7 @@ def train(
                 model_name,
                 load_in_8bit=True,
                 device_map='auto',
-                use_flash_attention_2=True
+                use_flash_attention_2=use_flash_attention_2
             )
             model = fix_model(model, tokenizer, use_resize=False)
             model = prepare_model_for_kbit_training(model)
@@ -188,6 +193,7 @@ if __name__ == "__main__":
     parser.add_argument("--random_seed", default=42, type=int, help='random_seed')
     parser.add_argument("--config_file", default='configs/llama_7b_lora.json', type=str, help='path to config file')
     parser.add_argument("--model_type", default='llama', type=str, help='model type')
+    parser.add_argument("--use_flash_attention", default=False, type=bool, help='use_flash_attention_2')
     parser.add_argument("--max_instances", default=-1, type=int, help='max number of instructions')
     parser.add_argument("--push_to_hub", default=False, type=bool, help='push to hugginface hub')
     arguments = parser.parse_args()
@@ -217,6 +223,7 @@ if __name__ == "__main__":
         train_instructions=train_dataset,
         test_instructions=test_dataset,
         model_type=arguments.model_type,
+        use_flash_attention_2=arguments.use_flash_attention,
         dataset_name=arguments.dataset_name,
         output_dir=arguments.output_dir,
         seed=arguments.random_seed,

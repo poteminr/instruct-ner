@@ -35,12 +35,12 @@ class InstructDataset(Dataset):
         self.processed_instructions = []
 
         for instruction in tqdm(self.instructions):
-            if self.model_type == 'llama':
+            if self.model_type in ['llama', 'mistral']:
                 tensors = self.convert_instruction_causal(instruction)
             elif self.model_type == 't5':
                 tensors = self.convert_instruction_seq2seq(instruction)
             else:
-                raise ValueError('model_type must be equals "llama" or "t5"')
+                raise ValueError('model_type must be equals "llama", "mistral" or "t5"')
 
             self.processed_instructions.append(tensors)
 
