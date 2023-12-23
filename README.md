@@ -134,6 +134,14 @@ metrics = calculate_metrics_from_dataframe(prediction, ENTITY_TYPES)
 |recall|0.919564|0.938536|0.901311|0.797073|0.849298|0.956643|
 |f1|0.942697|0.966228|0.927557|0.834262|0.917874|0.958991|
 
+### Mistral 7B with LoRA
+|           |   Drugname |   Drugclass |   Drugform |       DI |      ADR |   Finding |
+|:----------|-----------:|------------:|-----------:|---------:|---------:|----------:|
+| precision |   0.982337 |    0.999309 |   0.989719 | 0.907955 | 0.960243 |  0.981625 |
+| recall    |   0.979675 |    0.995871 |   0.987013 | 0.897919 | 0.921734 |  0.960581 |
+| f1        |   0.981004 |    0.997587 |   0.988364 | 0.902909 | 0.940594 |  0.970989 |
+
+
 ### rubert-tiny2 29.4M
 ||Drugname|Drugclass|Drugform|DI|ADR|Finding|
 |---|---|---|---|---|---|---|
@@ -152,7 +160,7 @@ Thus, LLM and encoder model produce comparable results on flat-ner datasets with
 ## Models
 * [poteminr/llama2-rudrec](https://huggingface.co/poteminr/llama2-rudrec) adapter model (LoRA)
 * [poteminr/llama2-rudrec-merged](https://huggingface.co/poteminr/llama2-rudrec-merged) merged with [base model](https://huggingface.co/meta-llama/Llama-2-7b-hf) 
-
+* [poteminr/mistral-rudrec](https://huggingface.co/poteminr/mistral-rudrec) adapter model (LoRA)
 
 and other models on HF such as T5 Llama:
 [poteminr](https://huggingface.co/poteminr)
