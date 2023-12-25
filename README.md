@@ -177,7 +177,7 @@ LLM doesn't produce structured output due to the large tagset (40 entities) and 
 
 **Base encoder format**
 
-*Postprocessing under costruction (!!)*
+*Postprocessing under construction (!!)*
 ```python
 F1 ≈ 0.91 (estimation)
 ```
