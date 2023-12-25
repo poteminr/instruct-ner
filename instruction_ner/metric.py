@@ -4,6 +4,13 @@ import pandas as pd
 from utils.instruct_utils import MODEL_INPUT_TEMPLATE
 
 
+def split_entities_by_words(dct: dict[str, str]) -> dict[str, str]:
+    word_lists = {}
+    for key in dct:
+        word_lists[key] = [word for item in dct[key] for word in item.split()]
+    return word_lists
+
+
 def extract_classes(input_string: str, entity_types: list[str]) -> dict[str, str]:
     if input_string.endswith(":"):
         input_string += " \n"
@@ -28,6 +35,7 @@ def calculate_metrics(
     extracted_entities: list[dict[str, str]],
     target_entities: list[dict[str, str]],
     entity_types: list[str],
+    split_entities: bool = False,
     return_only_f1: bool = False,
 ) -> dict[str, dict[str, float]]:
 
@@ -39,7 +47,11 @@ def calculate_metrics(
         if len(target.keys()) != len(extracted.keys()) and not isinstance(target, defaultdict):
             target = defaultdict(list, target)
             extracted = defaultdict(list, extracted)
-
+            
+        if split_entities:
+            target = split_entities_by_words(target)
+            extracted = split_entities_by_words(extracted)
+            
         for label in entity_types:
             pred_set = set(extracted[label])
             target_set = set(target[label])
@@ -78,10 +90,18 @@ def calculate_metrics(
 def calculate_metrics_from_dataframe(
     dataframe: pd.DataFrame,
     entity_types: list[str],
-    skip_empty: bool = False
+    skip_empty: bool = False,
+    target_col_name: str = 'target',
+    extracted_col_name: str = 'extracted',
+    split_entities: bool = False
 ) -> dict[str, dict[str, float]]:
     if skip_empty:
         empty_template = {k: [] for k in entity_types}
-        dataframe = dataframe[dataframe['target'] != empty_template]
+        dataframe = dataframe[dataframe[target_col_name] != empty_template]
 
-    return calculate_metrics(dataframe['extracted'].values, dataframe['target'].values, entity_types)
+    return calculate_metrics(
+        dataframe[extracted_col_name].values,
+        dataframe[target_col_name].values,
+        entity_types,
+        split_entities
+        )
