@@ -42,7 +42,10 @@ raw_entities = {
     'Finding': []
 }
 ```
-#### Only with mentioned entities (better for large tagset).
+#### Only with mentioned entities (better for large tagset)
+```python
+short_form_output=True (available with Nerel-BIO and MultiCoNER)
+```
 
 ```python
 raw_entities = {
@@ -97,6 +100,7 @@ class Instruction(TypedDict):
 1. [Russian Drug Reaction Corpus (RuDReC)](https://github.com/cimm-kzn/RuDReC)
 2. [NEREL-BIO](https://github.com/nerel-ds/NEREL-BIO) (Nested Named Entities)
 3. [CoNLL-2003](https://paperswithcode.com/dataset/conll-2003)
+4. [MultiCoNER II (2023)](https://multiconer.github.io/dataset) ([HF](https://huggingface.co/datasets/MultiCoNER/multiconer_v2/viewer/English%20(EN)), *fine and coarse level mapping of the tags*)
 ## Automatic calculation of metrics
 `instruction_ner/metric.py`
 
