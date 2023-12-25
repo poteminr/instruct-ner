@@ -1,3 +1,4 @@
+from typing import Optional
 ENTITY_TYPES = ['Facility', 'OtherLOC', 'HumanSettlement', 'Station',
                 'VisualWork', 'MusicalWork', 'WrittenWork', 'ArtWork', 'Software',
                 'OtherCW', 'MusicalGRP', 'PublicCORP', 'PrivateCORP', 'OtherCORP',
@@ -27,3 +28,18 @@ def fix_typos_in_lables(label: str) -> str:
     return label
 
 
+def map_to_coarse_entity_type(entity_type: Optional[str]) -> Optional[str]:
+    if entity_type is None:
+        return entity_type
+    
+    for coarse_type, subtypes in COARSE_ENTITY_TYPES_MAPPING.items():
+        if entity_type in subtypes:
+            return coarse_type
+
+
+def preprocess_entity_type(entity_type: str, coarse_level_tagset: bool = False) -> str:
+    entity_type = fix_typos_in_lables(entity_type)
+    if coarse_level_tagset:
+        entity_type = map_to_coarse_entity_type(entity_type)
+    return entity_type
+    
