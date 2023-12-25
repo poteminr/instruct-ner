@@ -6,7 +6,7 @@ import numpy as np
 from razdel import sentenize
 
 from utils.instruct_dataset import Instruction
-from utils.nerel_bio.nerel_bio_utils import INSTRUCTION_TEXT
+from utils.nerel_bio.nerel_bio_utils import INSTRUCTION_TEXT, ENTITY_TYPES
 from utils.instruct_utils import MODEL_INPUT_TEMPLATE, create_output_from_entities
 
 
@@ -33,19 +33,23 @@ def split_example(example: Example, n_splits: int = 8) -> tuple[str, dict[int, l
     return texts, splited_entities
 
 
-def parse_entities(entities: list[Entity]):
-    parsed_entities = defaultdict(list)
+def parse_entities(entities: list[Entity], short_form_output: bool = True):
+    if short_form_output:
+        parsed_entities = defaultdict(list)
+    else:
+        parsed_entities = dict(zip(ENTITY_TYPES, [[] for _ in range(len(ENTITY_TYPES))]))
+
     for entity in entities:
         parsed_entities[entity.type].append(entity.mention)
     
     return parsed_entities
 
-def create_instructions_for_example(example: Example) -> list[Instruction]:
+def create_instructions_for_example(example: Example, short_form_output: bool = True) -> list[Instruction]:
     instructions = []
     texts, splited_entities = split_example(example)
     
     for ind, text in enumerate(texts):
-        entities = parse_entities(splited_entities[ind])
+        entities = parse_entities(splited_entities[ind], short_form_output)
         instruction = {
             'instruction': INSTRUCTION_TEXT,
             'input': text,
@@ -59,16 +63,16 @@ def create_instructions_for_example(example: Example) -> list[Instruction]:
     return instructions
 
 
-def _fill_instructions_list(examples: list[Example]) -> list[Instruction]:
+def _fill_instructions_list(examples: list[Example], short_form_output: bool = True) -> list[Instruction]:
     instructions = []
     for example in tqdm(examples):
-            instructions.extend(create_instructions_for_example(example))
+            instructions.extend(create_instructions_for_example(example, short_form_output))
 
     return instructions
 
-def create_instruct_dataset(data_path: str, max_instances: int = -1) -> list[Instruction]:
+def create_instruct_dataset(data_path: str, max_instances: int = -1, short_form_output: bool = True) -> list[Instruction]:
     examples = parse_examples(data_path)
-    instructions = _fill_instructions_list(examples)
+    instructions = _fill_instructions_list(examples, short_form_output)
     
     if max_instances != -1 and len(instructions) > max_instances:
         instructions = instructions[:max_instances]
@@ -79,6 +83,7 @@ def create_instruct_dataset(data_path: str, max_instances: int = -1) -> list[Ins
 def create_train_test_instruct_datasets(
     data_path: str,
     max_instances: int = -1,
+    short_form_output: bool = True,
     test_size: float = 0.3,
     random_seed: int = 42
 ) -> tuple[list[Instruction], list[Instruction]]:
@@ -88,4 +93,4 @@ def create_train_test_instruct_datasets(
         examples = examples[:max_instances]
 
     train_dataset, test_dataset = train_test_split(examples, test_size=test_size, random_state=random_seed)
-    return _fill_instructions_list(train_dataset), _fill_instructions_list(test_dataset)    
+    return _fill_instructions_list(train_dataset, short_form_output), _fill_instructions_list(test_dataset, short_form_output)    
