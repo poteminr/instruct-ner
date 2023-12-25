@@ -59,7 +59,7 @@ def _fill_instructions_list(dataset: Dataset, short_form_output: bool = True) ->
     return instructions
 
 def create_instruct_dataset(split: str, max_instances: int = -1, short_form_output: bool = True) -> list[Instruction]:
-    dataset = load_dataset('MultiCoNER/multiconer_v2', 'Ukrainian (UK)', split=split)    
+    dataset = load_dataset('MultiCoNER/multiconer_v2', 'English (EN)', split=split)    
     instructions = _fill_instructions_list(dataset, short_form_output)
     
     if max_instances != -1 and len(instructions) > max_instances:
