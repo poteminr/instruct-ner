@@ -179,7 +179,7 @@ LLM doesn't produce structured output due to the large tagset (40 entities) and 
 
 *Postprocessing under construction (!!)*
 ```python
-F1 ≈ 0.91 (estimation)
+F1 ≈ 0.915 (estimation)
 ```
 
 ### Restrictions
