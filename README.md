@@ -152,7 +152,36 @@ metrics = calculate_metrics_from_dataframe(prediction, ENTITY_TYPES)
 ### 2. [NEREL-BIO](https://github.com/nerel-ds/NEREL-BIO) (Nested Named Entities)
 LLM doesn't produce structured output due to the large tagset (40 entities) and nested subentities. 
 ### 3. [CoNLL-2003](https://paperswithcode.com/dataset/conll-2003)
-Soon
+### Mistral 7B with LoRA
+
+**Base `insturct-ner` target format**
+```python
+{'PER': ['Nadim Ladki'], 'ORG': [], 'LOC': [], 'MISC': []}
+```
+|           |      PER |      ORG |      LOC |     MISC |
+|:----------|---------:|---------:|---------:|---------:|
+| precision | 0.990027 | 0.950637 | 0.976433 | 0.958751 |
+| recall    | 0.98536  | 0.9703   | 0.965061 | 0.959301 |
+| f1        | 0.987688 | 0.960367 | 0.970714 | 0.959026 |
+
+**Splitted by words target format**
+
+```python
+{'PER': ['Nadim', 'Ladki'], 'ORG': [], 'LOC': [], 'MISC': []}
+```
+|           |      PER |      ORG |      LOC |     MISC |
+|:----------|---------:|---------:|---------:|---------:|
+| precision | 0.991059 | 0.945115 | 0.972459 | 0.944682 |
+| recall    | 0.988945 | 0.972525 | 0.962816 | 0.955922 |
+| f1        | 0.990001 | 0.958624 | 0.967613 | 0.950269 |
+
+**Base encoder format**
+
+*Postprocessing under costruction (!!)*
+```python
+F1 ≈ 0.91 (estimation)
+```
+
 ### Restrictions
 Instruction LLM for NER performs well on flat entities, but performs poorly on datasets with large tagset and nested entites. It's hard to output all entities in a single response due to performance limitations.
 

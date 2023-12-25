@@ -105,3 +105,39 @@ def calculate_metrics_from_dataframe(
         entity_types,
         split_entities
         )
+
+
+def _convert_predicted_tags_to_ids(tags: list[str], label_to_id: dict[str, int]) -> list[int]:
+    return [label_to_id[tag] for tag in tags]
+
+
+def _align_predicted_tags(
+    tokens: list[str],
+    extracted_entities: list[dict[str, str]],
+    id_to_label: dict[int, str],
+    convert_to_ids: bool = False
+) -> list[int]:
+    predicted_tags = []
+    last_entity = None
+
+    label_to_id = dict(zip(id_to_label.values(), id_to_label.keys()))
+    
+    for token in tokens:
+        token_tags = [] 
+        for entity, entity_tokens in extracted_entities.items():
+            if token in entity_tokens:
+                if last_entity == entity:
+                    entity_tag = id_to_label[list(id_to_label.keys())[list(id_to_label.values()).index(f'I-{entity}')]]
+                else:
+                    entity_tag = id_to_label[list(id_to_label.keys())[list(id_to_label.values()).index(f'B-{entity}')]]
+                    last_entity = entity
+                token_tags.append(entity_tag)
+        if not token_tags:
+            token_tags.append(id_to_label[0])
+            last_entity = None  
+        predicted_tags.extend(token_tags)
+
+    if convert_to_ids:
+        return _convert_predicted_tags_to_ids(predicted_tags, label_to_id)
+    else:
+        return predicted_tags
