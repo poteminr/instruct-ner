@@ -194,6 +194,7 @@ if __name__ == "__main__":
     parser.add_argument("--config_file", default='configs/llama_7b_lora.json', type=str, help='path to config file')
     parser.add_argument("--model_type", default='llama', type=str, help='model type')
     parser.add_argument("--use_flash_attention", default=False, type=bool, help='use_flash_attention_2')
+    parser.add_argument("--coarse_tagset_multiconer", default=False, type=bool, help='use_coarse_tagset_multiconer')
     parser.add_argument("--max_instances", default=-1, type=int, help='max number of instructions')
     parser.add_argument("--push_to_hub", default=False, type=bool, help='push to hugginface hub')
     arguments = parser.parse_args()
@@ -214,10 +215,22 @@ if __name__ == "__main__":
         test_path = os.path.join(arguments.data_path, 'test')
         train_dataset = create_instruct_dataset(train_path, max_instances=arguments.max_instances)
         test_dataset = create_instruct_dataset(test_path, max_instances=arguments.max_instances)
-    else:
+    elif arguments.dataset_name == 'conll2003':
         from utils.conll2003.conll_reader import create_instruct_dataset
         train_dataset = create_instruct_dataset(split='train', max_instances=arguments.max_instances)
         test_dataset = create_instruct_dataset(split='validation', max_instances=arguments.max_instances)
+    elif arguments.dataset_name == 'milticoner2023':
+        from utils.multiconer2023.multiconer_reader import create_instruct_dataset
+        train_dataset = create_instruct_dataset(
+            split='train',
+            max_instances=arguments.max_instances,
+            coarse_level_tagset=arguments.coarse_tagset_multiconer
+        )
+        test_dataset = create_instruct_dataset(
+            split='validation',
+            max_instances=arguments.max_instances,
+            coarse_level_tagset=arguments.coarse_tagset_multiconer
+        )
 
     train(
         train_instructions=train_dataset,
