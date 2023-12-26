@@ -2,7 +2,7 @@ from tqdm import tqdm
 from datasets import Dataset, load_dataset
 from collections import defaultdict 
 from utils.instruct_dataset import Instruction
-from utils.multiconer2023.multiconer_utils import ENTITY_TYPES, INSTRUCTION_TEXT, preprocess_entity_type
+from utils.multiconer2023.multiconer_utils import ENTITY_TYPES, INSTRUCTION_TEXT, COARSE_INSTRUCTION_TEXT, preprocess_entity_type
 from utils.instruct_utils import MODEL_INPUT_TEMPLATE, create_output_from_entities
 
 
@@ -52,12 +52,12 @@ def create_instructions_for_sample(
 ) -> Instruction:
     text = " ".join(sample['tokens'])
     entities = parse_entities_from_sample(sample['ner_tags'], sample['tokens'], short_form_output, coarse_level_tagset)
-    
+    instruction_text = COARSE_INSTRUCTION_TEXT if coarse_level_tagset else INSTRUCTION_TEXT 
     return {
-        'instruction': INSTRUCTION_TEXT,
+        'instruction': instruction_text,
         'input': text,
         'output': create_output_from_entities(entities, out_type=2),
-        'source': MODEL_INPUT_TEMPLATE['prompts_input'].format(instruction=INSTRUCTION_TEXT.strip(), inp=text.strip()),
+        'source': MODEL_INPUT_TEMPLATE['prompts_input'].format(instruction=instruction_text.strip(), inp=text.strip()),
         'raw_entities': entities,
         'id': f"{sample['id']}"
     }
