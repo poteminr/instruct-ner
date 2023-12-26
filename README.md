@@ -179,12 +179,12 @@ LLM doesn't produce structured output due to the large tagset (40 entities) and 
 | recall    | 0.988945 | 0.972525 | 0.962816 | 0.955922 |
 | f1        | 0.990001 | 0.958624 | 0.967613 | 0.950269 |
 
-**Base encoder format**
+<!-- **Base encoder format**
 
 *Postprocessing under construction (!!)*
 ```python
 F1 ≈ 0.915 (estimation)
-```
+``` -->
 
 ### Restrictions
 Instruction LLM for NER performs well on flat entities, but performs poorly on datasets with large tagset and nested entites. It's hard to output all entities in a single response due to performance limitations.
