@@ -169,6 +169,9 @@ LLM doesn't produce structured output due to the large tagset (40 entities) and 
 | f1        | 0.987688 | 0.960367 | 0.970714 | 0.959026 |
 
 **Splitted by words target format**
+```python
+split_entities=True (instruction_ner/metric.py)
+```
 
 ```python
 {'PER': ['Nadim', 'Ladki'], 'ORG': [], 'LOC': [], 'MISC': []}
