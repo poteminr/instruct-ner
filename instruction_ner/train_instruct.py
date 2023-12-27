@@ -46,7 +46,8 @@ def train(
     output_dir: str,
     seed: int,
     config_file: str,
-    push_to_hub: bool
+    push_to_hub: bool,
+    hf_name_postfix: str
 ):
     set_random_seed(seed)
     with open(config_file, "r") as r:
@@ -180,8 +181,8 @@ def train(
         if 'llama2' in config_file:
             model_type = 'llama2'
         if push_to_hub:
-            model.push_to_hub(f"poteminr/{model_type}-{dataset_name}", use_auth_token=True)
-            tokenizer.push_to_hub(f"poteminr/{model_type}-{dataset_name}", use_auth_token=True)
+            model.push_to_hub(f"poteminr/{model_type}-{dataset_name}{hf_name_postfix}", use_auth_token=True)
+            tokenizer.push_to_hub(f"poteminr/{model_type}-{dataset_name}{hf_name_postfix}", use_auth_token=True)
         
         
 if __name__ == "__main__":
@@ -197,6 +198,7 @@ if __name__ == "__main__":
     parser.add_argument("--coarse_tagset_multiconer", default=False, type=bool, help='use_coarse_tagset_multiconer')
     parser.add_argument("--max_instances", default=-1, type=int, help='max number of instructions')
     parser.add_argument("--push_to_hub", default=False, type=bool, help='push to hugginface hub')
+    parser.add_argument("--hf_name_postfix", default='', type=str, help='repo_id_postfix')
     arguments = parser.parse_args()
 
     assert arguments.dataset_name in SUPPORTED_DATASETS, f'expected dataset name from {SUPPORTED_DATASETS}'
@@ -241,6 +243,7 @@ if __name__ == "__main__":
         output_dir=arguments.output_dir,
         seed=arguments.random_seed,
         config_file=arguments.config_file,
-        push_to_hub=arguments.push_to_hub
+        push_to_hub=arguments.push_to_hub,
+        hf_name_postfix=arguments.hf_name_postfix
     )
     
