@@ -24,6 +24,7 @@ if __name__ == "__main__":
     parser.add_argument("--model_name", default='poteminr/llama2-rudrec', type=str, help='model name from hf')
     parser.add_argument("--prediction_path", default='prediction.json', type=str, help='path for saving prediction')
     parser.add_argument("--max_instances", default=-1, type=int, help='max number of instruction')
+    parser.add_argument("--coarse_tagset_multiconer", default=False, type=bool, help='use_coarse_tagset_multiconer')
     parser.add_argument("--batch_size", default=4, type=int, help='number of instructions in batch')
     arguments = parser.parse_args()
 
@@ -66,12 +67,21 @@ if __name__ == "__main__":
         
         test_path = os.path.join(arguments.data_path, 'test')
         test_dataset = create_instruct_dataset(test_path, max_instances=arguments.max_instances)
-    else:
+    elif arguments.dataset_name == 'conll2003':
         from utils.conll2003.conll_reader import create_instruct_dataset
         from utils.conll2003.conll_utils import ENTITY_TYPES
-        
-        test_dataset = create_instruct_dataset(split='test', max_instances=arguments.max_instances)
     
+        test_dataset = create_instruct_dataset(split='test', max_instances=arguments.max_instances)
+    elif arguments.dataset_name == 'multiconer2023':
+        from utils.multiconer2023.multiconer_reader import create_instruct_dataset
+        from utils.multiconer2023.multiconer_utils import ENTITY_TYPES, COARSE_ENTITY_TYPES
+        if arguments.coarse_tagset_multiconer:
+            ENTITY_TYPES = COARSE_ENTITY_TYPES
+        test_dataset = create_instruct_dataset(
+            split='test',
+            max_instances=arguments.max_instances,
+            coarse_level_tagset=arguments.coarse_tagset_multiconer
+        )    
     extracted_list = []
     target_list = []
     instruction_ids = []
