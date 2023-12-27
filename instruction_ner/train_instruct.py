@@ -221,7 +221,7 @@ if __name__ == "__main__":
         from utils.conll2003.conll_reader import create_instruct_dataset
         train_dataset = create_instruct_dataset(split='train', max_instances=arguments.max_instances)
         test_dataset = create_instruct_dataset(split='validation', max_instances=arguments.max_instances)
-    elif arguments.dataset_name == 'milticoner2023':
+    elif arguments.dataset_name == 'multiconer2023':
         from utils.multiconer2023.multiconer_reader import create_instruct_dataset
         train_dataset = create_instruct_dataset(
             split='train',
