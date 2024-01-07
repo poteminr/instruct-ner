@@ -79,6 +79,7 @@ if __name__ == "__main__":
             ENTITY_TYPES = COARSE_ENTITY_TYPES
         test_dataset = create_instruct_dataset(
             split='test',
+            shuffle=True,
             max_instances=arguments.max_instances,
             coarse_level_tagset=arguments.coarse_tagset_multiconer
         )    

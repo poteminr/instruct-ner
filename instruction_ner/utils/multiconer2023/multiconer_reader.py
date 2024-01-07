@@ -73,11 +73,15 @@ def _fill_instructions_list(
 
 def create_instruct_dataset(
     split: str,
+    shuffle: bool = False,
     max_instances: int = -1,
     short_form_output: bool = True,
     coarse_level_tagset: bool = False    
 ) -> list[Instruction]:
     dataset = load_dataset('MultiCoNER/multiconer_v2', 'English (EN)', split=split)    
+    if shuffle:
+        dataset = dataset.shuffle(seed=42)
+        
     instructions = _fill_instructions_list(dataset, short_form_output, coarse_level_tagset)
     
     if max_instances != -1 and len(instructions) > max_instances:
