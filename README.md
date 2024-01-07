@@ -162,11 +162,11 @@ LLM doesn't produce structured output due to the large tagset (40 entities) and 
 ```python
 {'PER': ['Nadim Ladki'], 'ORG': [], 'LOC': [], 'MISC': []}
 ```
-|           |      PER |      ORG |      LOC |     MISC |
-|:----------|---------:|---------:|---------:|---------:|
-| precision | 0.990027 | 0.950637 | 0.976433 | 0.958751 |
-| recall    | 0.98536  | 0.9703   | 0.965061 | 0.959301 |
-| f1        | 0.987688 | 0.960367 | 0.970714 | 0.959026 |
+|           |      PER |      ORG |      LOC |     MISC |   overall |
+|:----------|---------:|---------:|---------:|---------:|----------:|
+| precision | 0.990027 | 0.950637 | 0.976433 | 0.958751 |  0.969374 |
+| recall    | 0.98536  | 0.9703   | 0.965061 | 0.959301 |  0.970467 |
+| f1        | 0.987688 | 0.960367 | 0.970714 | 0.959026 |  0.96992  |
 
 **Splitted by words target format**
 ```python
@@ -176,11 +176,11 @@ split_entities=True (instruction_ner/metric.py)
 ```python
 {'PER': ['Nadim', 'Ladki'], 'ORG': [], 'LOC': [], 'MISC': []}
 ```
-|           |      PER |      ORG |      LOC |     MISC |
-|:----------|---------:|---------:|---------:|---------:|
-| precision | 0.991059 | 0.945115 | 0.972459 | 0.944682 |
-| recall    | 0.988945 | 0.972525 | 0.962816 | 0.955922 |
-| f1        | 0.990001 | 0.958624 | 0.967613 | 0.950269 |
+|           |      PER |      ORG |      LOC |     MISC |   overall |
+|:----------|---------:|---------:|---------:|---------:|----------:|
+| precision | 0.991059 | 0.945115 | 0.972459 | 0.944682 |  0.964659 |
+| recall    | 0.988945 | 0.972525 | 0.962816 | 0.955922 |  0.971615 |
+| f1        | 0.990001 | 0.958624 | 0.967613 | 0.950269 |  0.968125 |
 
 <!-- **Base encoder format**
 
@@ -188,6 +188,25 @@ split_entities=True (instruction_ner/metric.py)
 ```python
 F1 ≈ 0.915 (estimation)
 ``` -->
+### 4. [MultiCoNER II (2023)](https://huggingface.co/datasets/MultiCoNER/multiconer_v2/viewer/English%20(EN))
+* English (test)
+* Shuffled with seed 42
+* First 10k samples
+
+[The fine to coarse level mapping of the tags (link)](https://multiconer.github.io/dataset)
+### Mistral 7B with LoRA
+#### Coarse tagset
+|           |      LOC |       CW |      GRP |      PER |     PROD |      MED |   overall |
+|:----------|---------:|---------:|---------:|---------:|---------:|---------:|----------:|
+| precision | 0.915037 | 0.937586 | 0.95428  | 0.961388 | 0.964142 | 0.966908 |  0.949754 |
+| recall    | 0.939475 | 0.942131 | 0.938311 | 0.965418 | 0.950584 | 0.966716 |  0.9507   |
+| f1        | 0.927095 | 0.939853 | 0.946228 | 0.963399 | 0.957315 | 0.966812 |  0.950226 |
+#### Fine tagset
+|           |   overall |
+|:----------|----------:|
+| precision |  0.98425  |
+| recall    |  0.984075 |
+| f1        |  0.984162 |
 
 ### Restrictions
 Instruction LLM for NER performs well on flat entities, but performs poorly on datasets with large tagset and nested entites. It's hard to output all entities in a single response due to performance limitations.
