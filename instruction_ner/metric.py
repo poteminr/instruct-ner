@@ -57,7 +57,7 @@ def calculate_metrics(
             target_set = set(target[label])
 
             if pred_set == target_set and len(pred_set) == 0:
-                tp = 1
+                tp = 0
                 fp = 0
                 fn = 0
             else:
