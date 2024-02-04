@@ -214,9 +214,9 @@ if __name__ == "__main__":
     elif arguments.dataset_name =='nerel_bio':
         from utils.nerel_bio.nerel_reader import create_instruct_dataset
         train_path = os.path.join(arguments.data_path, 'train')
-        test_path = os.path.join(arguments.data_path, 'test')
-        train_dataset = create_instruct_dataset(train_path, max_instances=arguments.max_instances)
-        test_dataset = create_instruct_dataset(test_path, max_instances=arguments.max_instances)
+        test_path = os.path.join(arguments.data_path, 'dev')
+        train_dataset = create_instruct_dataset(train_path, max_instances=arguments.max_instances, text_n_splits=-1)
+        test_dataset = create_instruct_dataset(test_path, max_instances=arguments.max_instances, text_n_splits=-1)
     elif arguments.dataset_name == 'conll2003':
         from utils.conll2003.conll_reader import create_instruct_dataset
         train_dataset = create_instruct_dataset(split='train', max_instances=arguments.max_instances)
