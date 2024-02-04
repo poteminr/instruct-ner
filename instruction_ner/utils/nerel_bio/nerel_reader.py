@@ -1,4 +1,5 @@
 from collections import defaultdict
+from typing import Optional
 from tqdm import tqdm
 from pybrat.parser import BratParser, Example, Entity
 from sklearn.model_selection import train_test_split
@@ -15,12 +16,20 @@ def parse_examples(data_path: str) -> list[Example]:
     return parser.parse(data_path)
 
 
-def split_example(example: Example, n_splits: int = 8) -> tuple[str, dict[int, list[Entity]]]:
+def split_example(example: Example, n_splits: Optional[int] = None) -> tuple[str, dict[int, list[Entity]]]:
     sentences = list(sentenize(example.text))
     entities = sorted(example.entities, key=lambda x: x.spans[0].start)
     
-    splited_sentences = np.array_split(np.array(sentences), min(n_splits, len(sentences)))
-    boundings = [(a[0].start, a[-1].stop) for a in splited_sentences]
+    if n_splits is not None and n_splits > 0:
+        n_splits =  min(n_splits, len(sentences))
+    elif n_splits == -1:
+        n_splits = len(sentences)
+    else:
+        n_splits = 1
+        
+    sentences = np.array_split(np.array(sentences), n_splits)
+        
+    boundings = [(a[0].start, a[-1].stop) for a in sentences]
     texts = [example.text[b[0]:b[1]] for b in boundings]
     splited_entities = defaultdict(list)
     
@@ -44,9 +53,13 @@ def parse_entities(entities: list[Entity], short_form_output: bool = True):
     
     return parsed_entities
 
-def create_instructions_for_example(example: Example, short_form_output: bool = True) -> list[Instruction]:
+def create_instructions_for_example(
+    example: Example,
+    text_n_splits: Optional[int] = None,
+    short_form_output: bool = True
+) -> list[Instruction]:
     instructions = []
-    texts, splited_entities = split_example(example)
+    texts, splited_entities = split_example(example, text_n_splits)
     
     for ind, text in enumerate(texts):
         entities = parse_entities(splited_entities[ind], short_form_output)
@@ -63,16 +76,25 @@ def create_instructions_for_example(example: Example, short_form_output: bool = 
     return instructions
 
 
-def _fill_instructions_list(examples: list[Example], short_form_output: bool = True) -> list[Instruction]:
+def _fill_instructions_list(
+    examples: list[Example],
+    text_n_splits: Optional[int] = None,
+    short_form_output: bool = True
+) -> list[Instruction]:
     instructions = []
     for example in tqdm(examples):
-            instructions.extend(create_instructions_for_example(example, short_form_output))
+            instructions.extend(create_instructions_for_example(example, text_n_splits, short_form_output))
 
     return instructions
 
-def create_instruct_dataset(data_path: str, max_instances: int = -1, short_form_output: bool = True) -> list[Instruction]:
+def create_instruct_dataset(
+    data_path: str,
+    max_instances: int = -1,
+    text_n_splits: Optional[int] = None,
+    short_form_output: bool = True
+) -> list[Instruction]:
     examples = parse_examples(data_path)
-    instructions = _fill_instructions_list(examples, short_form_output)
+    instructions = _fill_instructions_list(examples, text_n_splits, short_form_output)
     
     if max_instances != -1 and len(instructions) > max_instances:
         instructions = instructions[:max_instances]
@@ -83,6 +105,7 @@ def create_instruct_dataset(data_path: str, max_instances: int = -1, short_form_
 def create_train_test_instruct_datasets(
     data_path: str,
     max_instances: int = -1,
+    text_n_splits: Optional[int] = None,
     short_form_output: bool = True,
     test_size: float = 0.3,
     random_seed: int = 42
@@ -93,4 +116,5 @@ def create_train_test_instruct_datasets(
         examples = examples[:max_instances]
 
     train_dataset, test_dataset = train_test_split(examples, test_size=test_size, random_state=random_seed)
-    return _fill_instructions_list(train_dataset, short_form_output), _fill_instructions_list(test_dataset, short_form_output)    
+    return _fill_instructions_list(train_dataset, text_n_splits, short_form_output), \
+           _fill_instructions_list(test_dataset, text_n_splits, short_form_output)    
