@@ -8,7 +8,8 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, T5ForConditionalGe
 from peft import PeftConfig, PeftModel
 
 from metric import extract_classes
-from train_utils import SUPPORTED_DATASETS
+from train_utils import SUPPORTED_DATASETS, MODEL_CLASSES
+
 
 def batch(iterable, n=4):
     l = len(iterable)
@@ -24,28 +25,24 @@ if __name__ == "__main__":
     parser.add_argument("--model_name", default='poteminr/llama2-rudrec', type=str, help='model name from hf')
     parser.add_argument("--prediction_path", default='prediction.json', type=str, help='path for saving prediction')
     parser.add_argument("--max_instances", default=-1, type=int, help='max number of instruction')
+    parser.add_argument("--text_n_splits", default=-1, type=int, help='number of splits for nerel')
     parser.add_argument("--coarse_tagset_multiconer", default=False, type=bool, help='use_coarse_tagset_multiconer')
     parser.add_argument("--batch_size", default=4, type=int, help='number of instructions in batch')
     arguments = parser.parse_args()
 
     assert arguments.dataset_name in SUPPORTED_DATASETS, f'expected dataset name from {SUPPORTED_DATASETS}'
 
-    model_name = arguments.model_name
-    generation_config = GenerationConfig.from_pretrained(model_name)
-    
+    generation_config = GenerationConfig.from_pretrained(arguments.model_name)
     peft_config = PeftConfig.from_pretrained(arguments.model_name)
-    base_model_name = peft_config.base_model_name_or_path
     
-    models = {'llama': AutoModelForCausalLM, 't5': T5ForConditionalGeneration, 'mistral': AutoModelForCausalLM}
-    
-    model = models[arguments.model_type].from_pretrained(
-        base_model_name,
+    model = MODEL_CLASSES[arguments.model_type]['model'].from_pretrained(
+        peft_config.base_model_name_or_path,
         load_in_8bit=True,
         device_map='auto'
     )
     
-    model = PeftModel.from_pretrained(model, model_name)
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = PeftModel.from_pretrained(model, arguments.model_name)
+    tokenizer = AutoTokenizer.from_pretrained(arguments.model_name)
     
     model.eval()
     model = torch.compile(model)
@@ -64,9 +61,12 @@ if __name__ == "__main__":
     elif arguments.dataset_name == 'nerel_bio':
         from utils.nerel_bio.nerel_reader import create_instruct_dataset
         from utils.nerel_bio.nerel_bio_utils import ENTITY_TYPES
-        
-        test_path = os.path.join(arguments.data_path, 'test')
-        test_dataset = create_instruct_dataset(test_path, max_instances=arguments.max_instances)
+
+        test_dataset = create_instruct_dataset(
+            data_path=os.path.join(arguments.data_path, 'test'),
+            max_instances=arguments.max_instances,
+            text_n_splits=arguments.text_n_splits
+        )
     elif arguments.dataset_name == 'conll2003':
         from utils.conll2003.conll_reader import create_instruct_dataset
         from utils.conll2003.conll_utils import ENTITY_TYPES
@@ -75,14 +75,17 @@ if __name__ == "__main__":
     elif arguments.dataset_name == 'multiconer2023':
         from utils.multiconer2023.multiconer_reader import create_instruct_dataset
         from utils.multiconer2023.multiconer_utils import ENTITY_TYPES, COARSE_ENTITY_TYPES
+        
         if arguments.coarse_tagset_multiconer:
             ENTITY_TYPES = COARSE_ENTITY_TYPES
+            
         test_dataset = create_instruct_dataset(
             split='test',
             shuffle=True,
             max_instances=arguments.max_instances,
             coarse_level_tagset=arguments.coarse_tagset_multiconer
-        )    
+        )
+            
     extracted_list = []
     target_list = []
     instruction_ids = []

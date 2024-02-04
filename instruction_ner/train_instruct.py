@@ -2,21 +2,17 @@ import argparse
 import json
 import os
 
-import numpy as np
 import torch
 import wandb
 from peft import (LoraConfig, PeftConfig, PeftModel, get_peft_model,
                   prepare_model_for_kbit_training)
-from train_utils import fix_model, fix_tokenizer, set_random_seed, SUPPORTED_DATASETS
 from transformers import (AutoModelForCausalLM, AutoTokenizer,
-                          DataCollatorForSeq2Seq,
-                          DataCollatorForTokenClassification, EvalPrediction,
-                          T5ForConditionalGeneration, Trainer, TrainerCallback,
+                          Trainer, TrainerCallback,
                           TrainerControl, TrainerState, TrainingArguments)
 from transformers.trainer_utils import PREFIX_CHECKPOINT_DIR
 
 from utils.instruct_dataset import InstructDataset, Instruction
-# from metric import calculate_metrics, extract_classes
+from train_utils import fix_model, fix_tokenizer, set_random_seed, SUPPORTED_DATASETS, MODEL_CLASSES
 
 
 # https://github.com/huggingface/peft/issues/96
@@ -59,22 +55,6 @@ def train(
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     tokenizer = fix_tokenizer(tokenizer)
 
-    # def compute_metrics(eval_prediction: EvalPrediction, tokenizer=tokenizer):
-    #     predictions = np.argmax(eval_prediction.predictions, axis=-1)
-    #     labels = eval_prediction.label_ids
-
-    #     extracted_entities = []
-    #     target_entities = []
-    #     for ind, pred in enumerate(predictions):
-    #         non_masked_indices = (labels[ind] != -100)
-    #         pred = tokenizer.decode(pred, skip_special_tokens=True)
-    #         label = tokenizer.decode(labels[ind][non_masked_indices], skip_special_tokens=True)
-
-    #         extracted_entities.append(extract_classes(pred))
-    #         target_entities.append(extract_classes(label))
-
-    #     return calculate_metrics(extracted_entities, target_entities, return_only_f1=True)
-    
     only_target_loss = config.get("only_target_loss", True)
     max_source_tokens_count = config["max_source_tokens_count"]
     max_target_tokens_count = config["max_target_tokens_count"]
@@ -97,29 +77,14 @@ def train(
         only_target_loss=only_target_loss
     )
 
-    model_classes = {
-        'llama': {
-            'data_collator': DataCollatorForTokenClassification,
-            'model': AutoModelForCausalLM
-        },
-        'mistral': {
-            'data_collator': DataCollatorForTokenClassification,
-            'model': AutoModelForCausalLM
-        },
-        't5': {
-            'data_collator': DataCollatorForSeq2Seq,
-            'model': T5ForConditionalGeneration
-        }
-    }
-    
-    data_collator = model_classes[model_type]['data_collator'](tokenizer, pad_to_multiple_of=8)
+    data_collator = MODEL_CLASSES[model_type]['data_collator'](tokenizer, pad_to_multiple_of=8)
 
     load_in_8bit = bool(config.get("load_in_8bit", True))
     is_adapter = config['is_adapter']
     if load_in_8bit:
         if is_adapter:
             peft_config = PeftConfig.from_pretrained(model_name)
-            model = model_classes[model_type]['model'].from_pretrained(
+            model = MODEL_CLASSES[model_type]['model'].from_pretrained(
                 peft_config.base_model_name_or_path,
                 load_in_8bit=True,
                 device_map='auto',
@@ -129,11 +94,12 @@ def train(
             model = prepare_model_for_kbit_training(model)
             model = PeftModel.from_pretrained(model, model_name, is_trainable=True)
         else:
-            model = model_classes[model_type]['model'].from_pretrained(
+            model = MODEL_CLASSES[model_type]['model'].from_pretrained(
                 model_name,
                 load_in_8bit=True,
                 device_map='auto',
-                use_flash_attention_2=use_flash_attention_2
+                use_flash_attention_2=use_flash_attention_2,
+                trust_remote_code=True
             )
             model = fix_model(model, tokenizer, use_resize=False)
             model = prepare_model_for_kbit_training(model)
@@ -172,10 +138,9 @@ def train(
         eval_dataset=val_dataset,
         callbacks=[SavePeftModelCallback],
         data_collator=data_collator,
-        # compute_metrics=compute_metrics
     )
     
-    with wandb.init(project="Instruction NER") as run:
+    with wandb.init(project="Instruction NER") as _:
         model.print_trainable_parameters()
         trainer.train()
         if 'llama2' in config_file:
@@ -197,6 +162,7 @@ if __name__ == "__main__":
     parser.add_argument("--use_flash_attention", default=False, type=bool, help='use_flash_attention_2')
     parser.add_argument("--coarse_tagset_multiconer", default=False, type=bool, help='use_coarse_tagset_multiconer')
     parser.add_argument("--max_instances", default=-1, type=int, help='max number of instructions')
+    parser.add_argument("--text_n_splits", default=-1, type=int, help='number of splits for nerel')
     parser.add_argument("--push_to_hub", default=False, type=bool, help='push to hugginface hub')
     parser.add_argument("--hf_name_postfix", default='', type=str, help='repo_id_postfix')
     arguments = parser.parse_args()
@@ -205,6 +171,7 @@ if __name__ == "__main__":
 
     if arguments.dataset_name == 'rudrec':
         from utils.rudrec.rudrec_reader import create_train_test_instruct_datasets
+        
         train_dataset, test_dataset = create_train_test_instruct_datasets(
             data_path=arguments.data_path,
             max_instances=arguments.max_instances,
@@ -213,16 +180,25 @@ if __name__ == "__main__":
         )       
     elif arguments.dataset_name =='nerel_bio':
         from utils.nerel_bio.nerel_reader import create_instruct_dataset
-        train_path = os.path.join(arguments.data_path, 'train')
-        test_path = os.path.join(arguments.data_path, 'dev')
-        train_dataset = create_instruct_dataset(train_path, max_instances=arguments.max_instances, text_n_splits=-1)
-        test_dataset = create_instruct_dataset(test_path, max_instances=arguments.max_instances, text_n_splits=-1)
+        
+        train_dataset = create_instruct_dataset(
+            data_path=os.path.join(arguments.data_path, 'train'),
+            max_instances=arguments.max_instances,
+            text_n_splits=arguments.text_n_splits
+        )
+        test_dataset = create_instruct_dataset(
+            data_path=os.path.join(arguments.data_path, 'dev'),
+            max_instances=arguments.max_instances,
+            text_n_splits=arguments.text_n_splits
+        )
     elif arguments.dataset_name == 'conll2003':
         from utils.conll2003.conll_reader import create_instruct_dataset
+        
         train_dataset = create_instruct_dataset(split='train', max_instances=arguments.max_instances)
         test_dataset = create_instruct_dataset(split='validation', max_instances=arguments.max_instances)
     elif arguments.dataset_name == 'multiconer2023':
         from utils.multiconer2023.multiconer_reader import create_instruct_dataset
+        
         train_dataset = create_instruct_dataset(
             split='train',
             max_instances=arguments.max_instances,

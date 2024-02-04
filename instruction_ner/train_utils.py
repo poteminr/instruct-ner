@@ -2,10 +2,28 @@ import os
 import random
 import torch
 import numpy as np
-
+from transformers import (DataCollatorForTokenClassification, AutoModelForCausalLM,
+                          DataCollatorForSeq2Seq, T5ForConditionalGeneration)
 
 SUPPORTED_DATASETS = ['rudrec', 'nerel_bio', 'conll2003', 'multiconer2023']
-
+MODEL_CLASSES = {
+    'llama': {
+        'data_collator': DataCollatorForTokenClassification,
+        'model': AutoModelForCausalLM
+    },
+    'mistral': {
+        'data_collator': DataCollatorForTokenClassification,
+        'model': AutoModelForCausalLM
+    },
+    't5': {
+        'data_collator': DataCollatorForSeq2Seq,
+        'model': T5ForConditionalGeneration
+    },
+    'rwkv': {
+        'data_collator': DataCollatorForTokenClassification,
+        'model': AutoModelForCausalLM
+    }
+}
 
 # code from https://github.com/IlyaGusev/rulm/blob/master/self_instruct/src/util/dl.py
 def set_random_seed(seed):
