@@ -31,6 +31,13 @@ def extract_classes(input_string: str, entity_types: list[str]) -> dict[str, lis
     return classes
 
 
+def calculate_f1(tp: int, fp: int, fn: int) -> tuple[float, float, float]:
+    precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+    recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+    f1 = (2 * precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+    return precision, recall, f1
+        
+        
 def calculate_metrics(
     extracted_entities: list[dict[str, str]],
     target_entities: list[dict[str, str]],
@@ -77,24 +84,14 @@ def calculate_metrics(
     overall_fn = 0
 
     for label in entity_types:
-        tp = overall_metrics[label]['tp']
-        fp = overall_metrics[label]['fp']
-        fn = overall_metrics[label]['fn']
+        overall_tp += overall_metrics[label]['tp']
+        overall_fp += overall_metrics[label]['fp']
+        overall_fn += overall_metrics[label]['fn']
 
-        overall_tp += tp
-        overall_fp += fp
-        overall_fn += fn
-
-        precision = tp / (tp + fp) if (tp + fp) > 0 else 0
-        recall = tp / (tp + fn) if (tp + fn) > 0 else 0
-        f1 = (2 * precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
-
+        precision, recall, f1 = calculate_f1(**overall_metrics[label])
         results[label] = {'precision': precision, 'recall': recall, 'f1': f1}
-
-    overall_precision = overall_tp / (overall_tp + overall_fp) if (overall_tp + overall_fp) > 0 else 0
-    overall_recall = overall_tp / (overall_tp + overall_fn) if (overall_tp + overall_fn) > 0 else 0
-    overall_f1 = (2 * overall_precision * overall_recall) / (overall_precision + overall_recall) if (overall_precision + overall_recall) > 0 else 0
-
+        
+    overall_precision, overall_recall, overall_f1 = calculate_f1(overall_tp, overall_fp, overall_fn)  
     results['overall'] = {'precision': overall_precision, 'recall': overall_recall, 'f1': overall_f1}
     return results
 
