@@ -9,10 +9,14 @@ Solution of complex [Named Entity Recognition](https://paperswithcode.com/task/n
 ## Table of contents
 
 - [Insturct Dataset](#insturct-dataset)
+    - [Implemented datasets](#implemented-datasets)
 - [Automatic calculation of metrics](#automatic-calculation-of-metrics)
 - [Results](#results)
+    - [Metrics](#tables-with-metrics-for-implemented-datasets-link)
     - [Restrictions](#restrictions)
 - [Models](#models)
+    - [Implemented models](#implemented-models)
+    - [HuggingFace](#huggingface)
 
 
 ## Insturct Dataset
@@ -129,16 +133,22 @@ metrics = calculate_metrics_from_dataframe(prediction, ENTITY_TYPES)
   'f1': 0.9426974143955277}, ...}
 ```
  ## Results
- [Tables with metrics for implemented datasets (link)](METRICS.md)
+### [Tables with metrics for implemented datasets (link)](METRICS.md)
 
 ### Restrictions
-Instruction LLM for NER performs well on flat entities, but performs poorly on datasets with large tagset and nested entites. It's hard to output all entities in a single response due to performance limitations.
+Instruction LLM for NER performs well on flat entities, but performs poorly on datasets with large tagset and nested entites. 
 
 Thus, LLM and encoder model produce comparable results on flat-ner datasets with incredibly different training and inference times. 
 ## Models
+### Implemented models
+1. Llama & Llama2
+2. Mistral
+3. T5
+4. RWKV
+### HuggingFace
 * [poteminr/llama2-rudrec](https://huggingface.co/poteminr/llama2-rudrec) adapter model (LoRA)
 * [poteminr/llama2-rudrec-merged](https://huggingface.co/poteminr/llama2-rudrec-merged) merged with [base model](https://huggingface.co/meta-llama/Llama-2-7b-hf) 
 * [poteminr/mistral-rudrec](https://huggingface.co/poteminr/mistral-rudrec) adapter model (LoRA)
 
-and other models on HF such as T5 Llama:
+and other models on HF such as T5, Llama, Mistral:
 [poteminr](https://huggingface.co/poteminr)

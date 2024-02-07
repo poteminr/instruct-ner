@@ -40,4 +40,15 @@ ENTITY_TYPES = ['ACTIVITY',
                 'AWARD'
 ]
 
+MOST_FREQ_ENTITY_TYPES = ['ANATOMY',
+                          'CHEM',
+                          'DATE',
+                          'DISO',
+                          'LABPROC',
+                          'MEDPROC',
+                          'NUMBER',
+                          'PERCENT',
+                          'PERSON',
+                          'PHYS'
+]
 INSTRUCTION_TEXT = "Ты решаешь задачу NER. Извлеки из текста слова, относящиеся к каждой из следующих сущностей."

@@ -50,13 +50,13 @@ def calculate_metrics(
 
     overall_metrics = {label: {'tp': 0, 'fp': 0, 'fn': 0} for label in entity_types}
     for extracted, target in zip(extracted_entities, target_entities):
-        if len(target.keys()) != len(extracted.keys()) and not isinstance(target, defaultdict):
-            target = defaultdict(list, target)
-            extracted = defaultdict(list, extracted)
-
         if split_entities:
             target = split_entities_by_words(target)
             extracted = split_entities_by_words(extracted)
+
+        if len(target.keys()) != len(extracted.keys()) and not isinstance(target, defaultdict):
+            target = defaultdict(list, target)
+            extracted = defaultdict(list, extracted)
 
         for label in entity_types:
             if ignore_repetitions:
