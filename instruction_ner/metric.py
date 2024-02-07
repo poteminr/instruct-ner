@@ -1,24 +1,24 @@
 import re
-from collections import defaultdict
+from collections import defaultdict, Counter
 import pandas as pd
 from utils.instruct_utils import MODEL_INPUT_TEMPLATE
 
 
-def split_entities_by_words(dct: dict[str, str]) -> dict[str, str]:
+def split_entities_by_words(dct: dict[str, list[str]]) -> dict[str, list[str]]:
     word_lists = {}
     for key in dct:
         word_lists[key] = [word for item in dct[key] for word in item.split()]
     return word_lists
 
 
-def extract_classes(input_string: str, entity_types: list[str]) -> dict[str, str]:
+def extract_classes(input_string: str, entity_types: list[str]) -> dict[str, list[str]]:
     if input_string.endswith(":"):
         input_string += " \n"
     answer_start_idx = input_string.find(MODEL_INPUT_TEMPLATE['output_separator'])
     output_separator_length = len(MODEL_INPUT_TEMPLATE['output_separator'])
-    input_string = input_string[answer_start_idx+output_separator_length+1:] # input string should start with class tag
-    
-    classes = { k:[] for k in entity_types}
+    input_string = input_string[answer_start_idx+output_separator_length+1:]  # input string should start with class tag
+
+    classes = {k: [] for k in entity_types}
 
     pattern = rf"({'|'.join(entity_types)}):\s(.*?)(?=\n\w+:\s|$)"
     matches = re.findall(pattern, input_string)
@@ -36,9 +36,8 @@ def calculate_metrics(
     target_entities: list[dict[str, str]],
     entity_types: list[str],
     split_entities: bool = False,
-    return_only_f1: bool = False,
+    ignore_repetitions: bool = False
 ) -> dict[str, dict[str, float]]:
-
     assert not isinstance(extracted_entities, dict), f'expected a type list, but got {type(extracted_entities)}'
     assert not isinstance(target_entities, dict), f'expected a type list, but got {type(target_entities)}'
 
@@ -47,24 +46,27 @@ def calculate_metrics(
         if len(target.keys()) != len(extracted.keys()) and not isinstance(target, defaultdict):
             target = defaultdict(list, target)
             extracted = defaultdict(list, extracted)
-            
+
         if split_entities:
             target = split_entities_by_words(target)
             extracted = split_entities_by_words(extracted)
-            
-        for label in entity_types:
-            pred_set = set(extracted[label])
-            target_set = set(target[label])
 
-            if pred_set == target_set and len(pred_set) == 0:
-                tp = 0
-                fp = 0
-                fn = 0
-            else:
+        for label in entity_types:
+            if ignore_repetitions:
+                pred_set = set(extracted[label])
+                target_set = set(target[label])
+
                 tp = len(pred_set.intersection(target_set))
                 fp = len(pred_set.difference(target_set))
                 fn = len(target_set.difference(pred_set))
+            else:
+                pred_counter = Counter(extracted[label])
+                target_counter = Counter(target[label])
 
+                tp = sum((pred_counter & target_counter).values())
+                fp = sum((pred_counter - target_counter).values())
+                fn = sum((target_counter - pred_counter).values())
+            
             overall_metrics[label]['tp'] += tp
             overall_metrics[label]['fp'] += fp
             overall_metrics[label]['fn'] += fn
@@ -73,12 +75,12 @@ def calculate_metrics(
     overall_tp = 0
     overall_fp = 0
     overall_fn = 0
-    
+
     for label in entity_types:
         tp = overall_metrics[label]['tp']
         fp = overall_metrics[label]['fp']
         fn = overall_metrics[label]['fn']
-        
+
         overall_tp += tp
         overall_fp += fp
         overall_fn += fn
@@ -87,14 +89,11 @@ def calculate_metrics(
         recall = tp / (tp + fn) if (tp + fn) > 0 else 0
         f1 = (2 * precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
 
-        if return_only_f1:
-            results[label] = {'f1': f1}
-        else:
-            results[label] = {'precision': precision, 'recall': recall, 'f1': f1}
+        results[label] = {'precision': precision, 'recall': recall, 'f1': f1}
 
     overall_precision = overall_tp / (overall_tp + overall_fp) if (overall_tp + overall_fp) > 0 else 0
     overall_recall = overall_tp / (overall_tp + overall_fn) if (overall_tp + overall_fn) > 0 else 0
-    overall_f1 = (2 * overall_precision * overall_recall) / (overall_precision + overall_recall) if (overall_precision + overall_recall) > 0 else 0           
+    overall_f1 = (2 * overall_precision * overall_recall) / (overall_precision + overall_recall) if (overall_precision + overall_recall) > 0 else 0
 
     results['overall'] = {'precision': overall_precision, 'recall': overall_recall, 'f1': overall_f1}
     return results
@@ -106,7 +105,8 @@ def calculate_metrics_from_dataframe(
     skip_empty: bool = False,
     target_col_name: str = 'target',
     extracted_col_name: str = 'extracted',
-    split_entities: bool = False
+    split_entities: bool = False,
+    ignore_repetitions: bool = False
 ) -> dict[str, dict[str, float]]:
     if skip_empty:
         empty_template = {k: [] for k in entity_types}
@@ -116,7 +116,8 @@ def calculate_metrics_from_dataframe(
         dataframe[extracted_col_name].values,
         dataframe[target_col_name].values,
         entity_types,
-        split_entities
+        split_entities,
+        ignore_repetitions
         )
 
 
@@ -134,9 +135,9 @@ def _align_predicted_tags(
     last_entity = None
 
     label_to_id = dict(zip(id_to_label.values(), id_to_label.keys()))
-    
+
     for token in tokens:
-        token_tags = [] 
+        token_tags = []
         for entity, entity_tokens in extracted_entities.items():
             if token in entity_tokens:
                 if last_entity == entity:
@@ -147,7 +148,7 @@ def _align_predicted_tags(
                 token_tags.append(entity_tag)
         if not token_tags:
             token_tags.append(id_to_label[0])
-            last_entity = None  
+            last_entity = None
         predicted_tags.extend(token_tags)
 
     if convert_to_ids:
