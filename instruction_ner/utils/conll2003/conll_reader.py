@@ -2,7 +2,7 @@ from tqdm import tqdm
 from datasets import Dataset, load_dataset
 
 from utils.instruct_dataset import Instruction
-from utils.conll2003.conll_utils import ENTITY_TYPES, INSTRUCTION_TEXT, TAGSET
+from utils.conll2003.conll_utils import ENTITY_TYPES, INSTRUCTION_TEXT, EXTENDED_INSTRUCTION_TEXT, TAGSET
 from utils.instruct_utils import MODEL_INPUT_TEMPLATE, create_output_from_entities
 
 
@@ -38,15 +38,15 @@ def parse_entities_from_sample(ner_tags: list[int], tokens: list[str]) -> dict[s
     
     return entities
 
-def create_instructions_for_sample(sample: dict[str, list]) -> Instruction:
+def create_instructions_for_sample(sample: dict[str, list], extended_instruction_text: bool = True) -> Instruction:
     text = " ".join(sample['tokens'])
     entities = parse_entities_from_sample(sample['ner_tags'], sample['tokens'])
-    
+    instruction_text = EXTENDED_INSTRUCTION_TEXT if extended_instruction_text else INSTRUCTION_TEXT
     return {
-        'instruction': INSTRUCTION_TEXT,
+        'instruction': instruction_text,
         'input': text,
         'output': create_output_from_entities(entities, out_type=2),
-        'source': MODEL_INPUT_TEMPLATE['prompts_input'].format(instruction=INSTRUCTION_TEXT.strip(), inp=text.strip()),
+        'source': MODEL_INPUT_TEMPLATE['prompts_input'].format(instruction=instruction_text.strip(), inp=text.strip()),
         'raw_entities': entities,
         'id': f"{sample['id']}"
     }

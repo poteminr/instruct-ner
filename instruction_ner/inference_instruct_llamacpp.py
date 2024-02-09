@@ -32,7 +32,7 @@ if __name__ == "__main__":
     max_new_tokens = arguments.max_new_tokens
     
     if arguments.dataset_name == 'rudrec': 
-        from utils.rudrec.rudrec_utis import ENTITY_TYPES
+        from instruction_ner.utils.rudrec.rudrec_utils import ENTITY_TYPES
         _, test_dataset = create_train_test_instruct_datasets(arguments.data_path)
         if arguments.max_instances != -1 and arguments.max_instances < len(test_dataset):
             test_dataset = test_dataset[:arguments.max_instances]

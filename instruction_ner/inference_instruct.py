@@ -4,7 +4,7 @@ import torch
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-from transformers import AutoTokenizer, AutoModelForCausalLM, T5ForConditionalGeneration, GenerationConfig
+from transformers import AutoTokenizer, GenerationConfig
 from peft import PeftConfig, PeftModel
 
 from metric import extract_classes
@@ -53,7 +53,7 @@ if __name__ == "__main__":
     
     if arguments.dataset_name == 'rudrec': 
         from utils.rudrec.rudrec_reader import create_train_test_instruct_datasets
-        from utils.rudrec.rudrec_utis import ENTITY_TYPES
+        from instruction_ner.utils.rudrec.rudrec_utils import ENTITY_TYPES
 
         _, test_dataset = create_train_test_instruct_datasets(arguments.data_path)
         if arguments.max_instances != -1 and arguments.max_instances < len(test_dataset):

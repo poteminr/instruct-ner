@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split
 from typing import Union
 
 from utils.instruct_dataset import Instruction
-from utils.rudrec.rudrec_utis import ENTITY_TYPES, INSTRUCTION_TEXT, entity_type_to_instruction
+from instruction_ner.utils.rudrec.rudrec_utils import ENTITY_TYPES, INSTRUCTION_TEXT, EXTENDED_INSTRUCTION_TEXT, entity_type_to_instruction
 from utils.instruct_utils import MODEL_INPUT_TEMPLATE, create_output_from_entities
 
 
@@ -19,7 +19,8 @@ def parse_entities_from_record(record: rudrec.RuDReCRecord) -> tuple[str, dict[s
 
 def create_instructions_for_record(
     record: rudrec.RuDReCRecord,
-    is_separate_labels: bool = False
+    is_separate_labels: bool = False,
+    extended_instruction_text: bool = True
 ) -> Union[list[Instruction], Instruction]:
     text, entities = parse_entities_from_record(record)
     if is_separate_labels:
@@ -36,11 +37,12 @@ def create_instructions_for_record(
             })
         return record_instructions
     else:
+        instruction_text = EXTENDED_INSTRUCTION_TEXT if extended_instruction_text else INSTRUCTION_TEXT
         return {
-            'instruction': INSTRUCTION_TEXT,
+            'instruction': instruction_text,
             'input': text,
             'output': create_output_from_entities(entities, out_type=2),
-            'source': MODEL_INPUT_TEMPLATE['prompts_input'].format(instruction=INSTRUCTION_TEXT.strip(), inp=text.strip()),
+            'source': MODEL_INPUT_TEMPLATE['prompts_input'].format(instruction=instruction_text.strip(), inp=text.strip()),
             'raw_entities': entities,
             'id': f"{record.sentence_id}_{record.file_name}"
         }
