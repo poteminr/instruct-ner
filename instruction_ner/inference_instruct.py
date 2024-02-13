@@ -90,6 +90,7 @@ if __name__ == "__main__":
     target_list = []
     instruction_ids = []
     sources = []
+    generated_texts = []
     
     for instruction in tqdm(test_dataset):
         target_list.append(instruction['raw_entities'])
@@ -113,9 +114,11 @@ if __name__ == "__main__":
         for s in generation_output.sequences:
             string_output = tokenizer.decode(s, skip_special_tokens=True)
             extracted_list.append(extract_classes(string_output, ENTITY_TYPES))
-    
+            generated_texts.append(string_output)
+            
     pd.DataFrame({
         'id': np.concatenate(instruction_ids), 
         'extracted': extracted_list,
-        'target': np.concatenate(target_list)
+        'target': np.concatenate(target_list),
+        'generated_text': generated_texts
     }).to_json(arguments.prediction_path)

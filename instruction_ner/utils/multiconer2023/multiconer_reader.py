@@ -68,7 +68,10 @@ def _fill_instructions_list(
     short_form_output: bool = True,
     coarse_level_tagset: bool = False
 ) -> list[Instruction]:
-    instructions = [create_instructions_for_sample(sample, short_form_output, coarse_level_tagset) for sample in tqdm(dataset)]
+    instructions = []
+    for sample in tqdm(dataset):
+        instructions.append(create_instructions_for_sample(sample, short_form_output, coarse_level_tagset))
+        
     return instructions
 
 def create_instruct_dataset(
