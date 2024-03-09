@@ -10,7 +10,9 @@ Solution of complex [Named Entity Recognition](https://paperswithcode.com/task/n
 
 - [Insturct Dataset](#insturct-dataset)
     - [Implemented datasets](#implemented-datasets)
+    - [Training](#train-your-llm-on-instructions)
 - [Automatic calculation of metrics](#automatic-calculation-of-metrics)
+    - [Inference](#infer-your-llm-on-instructions-to-generate-predictionjson)
 - [Results](#results)
     - [Metrics](#tables-with-metrics-for-implemented-datasets-link)
     - [Restrictions](#restrictions)
@@ -105,7 +107,28 @@ class Instruction(TypedDict):
 2. [NEREL-BIO](https://github.com/nerel-ds/NEREL-BIO) (Nested Named Entities)
 3. [CoNLL-2003](https://paperswithcode.com/dataset/conll-2003)
 4. [MultiCoNER II (2023)](https://multiconer.github.io/dataset) ([HF](https://huggingface.co/datasets/MultiCoNER/multiconer_v2/viewer/English%20(EN)), *fine and coarse level mapping of the tags*)
+
+### Train your LLM on `instructions`  
+```python
+python medner/instruction_ner/train_instruct.py \
+        --config_file medner/instruction_ner/configs/mistral_7b.json \
+        --model_type mistral \
+        --dataset_name conll2003 \
+        --max_instances -1 \
+        --push_to_hub True \
+        --hf_name_postfix _extended_instruction
+```
+
 ## Automatic calculation of metrics
+### Infer your LLM on `instructions` to generate `prediction.json`
+```python
+python medner/instruction_ner/inference_instruct.py \
+        --batch_size 16 \
+        --dataset_name conll2003 \
+        --model_type mistral \
+        --model_name poteminr/mistral-conll2003_extended_instruction \
+        --max_instances -1
+```
 `instruction_ner/metric.py`
 
 You can use the implemented functions with the output of inference_instruct calculate metrics. 
