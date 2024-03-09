@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split
 from typing import Union
 
 from utils.instruct_dataset import Instruction
-from instruction_ner.utils.rudrec.rudrec_utils import ENTITY_TYPES, INSTRUCTION_TEXT, EXTENDED_INSTRUCTION_TEXT, entity_type_to_instruction
+from utils.rudrec.rudrec_utils import ENTITY_TYPES, INSTRUCTION_TEXT, EXTENDED_INSTRUCTION_TEXT, entity_type_to_instruction
 from utils.instruct_utils import MODEL_INPUT_TEMPLATE, create_output_from_entities
 
 
