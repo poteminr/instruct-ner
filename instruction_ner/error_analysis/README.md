@@ -1,7 +1,7 @@
 # Error analysis for `instruct-ner`
-You can view model errors of three types:
+You can view three types of model errors.:
 1. **Mistaken recognition** - one type of entity is recognized as another
-2. **Entities not recognized**
+2. **Entity is not recognized**
 3. **Overpredictiton**
 
 

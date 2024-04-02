@@ -53,7 +53,7 @@ def aggregate_errors(
                     else:
                         overall_errors['over_recognitions'][key].append((value, sample_id))
             
-            # Track entities not recognized
+        # Track entities not recognized
         for key in target_dict.keys():
             overall_errors['number_of_entities'][key] += len(target_dict[key])
             for value in target_dict[key]:
