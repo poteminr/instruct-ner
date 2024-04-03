@@ -7,7 +7,7 @@ import numpy as np
 from utils.instruct_dataset import Instruction
 
 
-def find_all_occurrences(sub_string, main_string):
+def find_all_occurrences(sub_string: str, main_string: str) -> dict[str]:
     occurrences = re.findall(re.escape(sub_string), main_string)
     return occurrences
 
