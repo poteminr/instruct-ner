@@ -1,15 +1,17 @@
+import re
 from collections import Counter, defaultdict
 from typing import Optional
 
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+from utils.instruct_dataset import Instruction
 
 
 def aggregate_errors(
-    target_datasets: list[dict[str, list[str]]],
-    extracted_datasets: list[dict[str, list[str]]],
-    sample_ids: list[str]
+    target_entities: list[dict[str, list[str]]],
+    extracted_entities: list[dict[str, list[str]]],
+    sample_ids: list
 ) -> dict[str]:
     overall_errors = {
         'total': 0,
@@ -21,46 +23,46 @@ def aggregate_errors(
         'errors_by_keys': {},
         'number_of_entities': defaultdict(int)
     }
-    for extracted_dict, target_dict, sample_id in zip(extracted_datasets, target_datasets, sample_ids):
+    for extracted_dict, target_dict, sample_id in zip(extracted_entities, target_entities, sample_ids):
         if not isinstance(extracted_dict, defaultdict) or not isinstance(target_dict, defaultdict):
             extracted_dict = defaultdict(list, extracted_dict)
             target_dict = defaultdict(list, target_dict)
             
-        for key in extracted_dict.keys():
-            extracted_values = Counter(extracted_dict[key])
-            target_values = Counter(target_dict[key])
+        for entity_type in extracted_dict.keys():
+            extracted_values = Counter(extracted_dict[entity_type])
+            target_values = Counter(target_dict[entity_type])
             false_positives = extracted_values - target_values
             false_negatives = target_values - extracted_values
 
             overall_errors['fp'] += sum(false_positives.values())
             overall_errors['fn'] += sum(false_negatives.values())
 
-            if key not in overall_errors['errors_by_keys']:
-                overall_errors['errors_by_keys'][key] = {
+            if entity_type not in overall_errors['errors_by_keys']:
+                overall_errors['errors_by_keys'][entity_type] = {
                     'fp': 0,
                     'fn': 0
                 }
 
-            overall_errors['errors_by_keys'][key]['fp'] += sum(false_positives.values())
-            overall_errors['errors_by_keys'][key]['fn'] += sum(false_negatives.values())
+            overall_errors['errors_by_keys'][entity_type]['fp'] += sum(false_positives.values())
+            overall_errors['errors_by_keys'][entity_type]['fn'] += sum(false_negatives.values())
 
             # Track mistaken recognitions with real target class
-            for value in extracted_dict[key]:
-                if value not in target_dict[key]:
+            for value in extracted_dict[entity_type]:
+                if value not in target_dict[entity_type]:
                     real_target = next((k for k, v in target_dict.items() if value in v), None)
                     if real_target is not None:
-                        overall_errors['mistaken_recognitions'][real_target].append((value, key, sample_id))
+                        overall_errors['mistaken_recognitions'][real_target].append((value, entity_type, sample_id))
                     else:
-                        overall_errors['over_recognitions'][key].append((value, sample_id))
+                        overall_errors['over_recognitions'][entity_type].append((value, sample_id))
             
         # Track entities not recognized
-        for key in target_dict.keys():
-            overall_errors['number_of_entities'][key] += len(target_dict[key])
-            for value in target_dict[key]:
-                if value not in extracted_dict[key]:
+        for entity_type in target_dict.keys():
+            overall_errors['number_of_entities'][entity_type] += len(target_dict[entity_type])
+            for value in target_dict[entity_type]:
+                if value not in extracted_dict[entity_type]:
                     predicted_target = next((k for k, v in extracted_dict.items() if value in v), None)
                     if predicted_target is None:
-                        overall_errors['entities_not_recognized'][key].append((value, sample_id))
+                        overall_errors['entities_not_recognized'][entity_type].append((value, sample_id))
                         
         overall_errors['total'] += 1
     return overall_errors
@@ -139,3 +141,39 @@ def plot_confusion_matrix_from_dataframe(
 ):
     errors = aggregate_errors_from_dataframe(dataframe, target_col_name, extracted_col_name, id_col_name)
     plot_confusion_matrix(errors, entity_types, in_percent, add_description)
+    
+
+def aggregate_conflicting_predictions(
+    extracted_entities: list[dict[str, list[str]]],
+    texts: Optional[list[str]] = None,
+    sample_ids: Optional[list] = None, 
+    instructions: Optional[list[Instruction]] = None,
+) -> dict[str]: 
+    conflicting_predictions = {
+        'total': 0,
+        'errors_by_id': defaultdict(list)
+    }
+    assert texts is not None or instructions is not None, f'expected that texts or instructions is not None'
+    if sample_ids is None and instructions is not None:
+        sample_ids = [instruction['id'] for instruction in instructions]
+
+    sample_ids = sample_ids if sample_ids is not None else np.arange(len(extracted_entities))
+    texts = texts if texts is not None else [instruction['input'] for instruction in instructions] 
+
+    for extracted_dict, text, sample_id in zip(extracted_entities, texts, sample_ids):
+        extracted_words = defaultdict(int)
+        for entity_type in extracted_dict.keys():
+            extracted_values = Counter(extracted_dict[entity_type])
+            for word, count in extracted_values.items():
+                extracted_words[word] += count
+                number_of_word_occurrences = len(re.findall(word, text))
+                if count < number_of_word_occurrences:
+                    conflicting_predictions['total'] += 1
+                    conflicting_predictions['errors_by_id'][sample_id].append((word, count, number_of_word_occurrences, entity_type))
+            
+            
+        for word, count in extracted_words.items():
+            if count > max(number_of_word_occurrences, 1):
+                conflicting_predictions['errors_by_id'][sample_id].append((word, extracted_words[word], number_of_word_occurrences))
+                
+    return conflicting_predictions
