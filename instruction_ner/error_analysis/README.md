@@ -1,8 +1,10 @@
 # Error analysis for `instruct-ner`
-You can view three types of model errors:
+You can explore 5 types of model errors:
 1. **Mistaken recognition** - one type of entity is recognized as another
 2. **Entity is not recognized**
-3. **Overpredictiton**
+3. **Misspelling** - origin text doesn't contain the predicted entity
+4. **Overpredictiton**
+5. **[Conflicting predictions](https://github.com/universal-ner/universal-ner/issues/19)**
 
 
 ```python
@@ -77,3 +79,47 @@ In percent (no. mistaken recognitions / no. of entities of this type):
 plot_confusion_matrix_from_dataframe(prediction, in_percent=True)
 ```
 <img src="images/conf_matrix_percent.png" alt="drawing" width="500"/>
+
+## Conflicting predictions
+```python
+Input text: "Paris Hilton visits Paris"
+
+Predictions: {'LOC'['Paris']}
+```
+Which of the two occurrences of the word `Paris` correspods to **`LOC`** (location)?
+
+LLMs for ner task usually don't generate position of exctracted entity in the origin text. Use `aggregate_conflicting_predictions` from `error_analysis.utils` to analyze this type of error.
+
+```python
+from error_analysis.utils import aggregate_conflicting_predictions
+conflicting_predictions = aggregate_conflicting_predictions(extracted, texts)
+```
+Output for example above:
+```python
+>>> {'total': 1, 'errors_by_sample_id': {0: [('Paris', 1, 2, 'LOC')]}}
+```
+
+**No. of occurrences < Sum No. of extracted**
+
+```python
+Input text: "Paris Hilton"
+
+Predictions: {'LOC'['Paris'], 'PER': ['Paris']}
+
+Output: {'total': 1, 'errors_by_sample_id': {0: [('Paris', 2, 1)]}}
+```
+
+
+**Example for RuDReC dataset**
+```python
+{'total': 8,
+ 'errors_by_sample_id': defaultdict(list,
+             {'2_2527424.tsv': [('антибиотик', 2, 1)],
+              '4_880567.tsv': [('капсула', 2, 1)],
+              '1_6275749.tsv': [('темп', 1, 2, 'Drugname')],
+              '1_2719942.tsv': [('антибиотик', 1, 3, 'Drugclass')],
+              '3_269906.tsv': [('насморк', 1, 2, 'DI')],
+              '3_2519035.tsv': [('таблеток', 1, 2, 'Drugform')],
+              '3_877244.tsv': [('стоматит', 1, 2, 'DI')],
+              '4_614513.tsv': [('капсул', 1, 2, 'Drugform')]})}
+```

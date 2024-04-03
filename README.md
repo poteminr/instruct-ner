@@ -15,7 +15,7 @@ Solution of complex [Named Entity Recognition](https://paperswithcode.com/task/n
     - [Inference](#infer-your-llm-on-instructions-to-generate-predictionjson)
 - [Results](#results)
     - [Metrics](#tables-with-metrics-for-implemented-datasets-link)
-    - [Error Analysis](#error-analysis-link)
+    - [Error analysis](#error-analysis-link)
     - [Restrictions](#restrictions)
 - [Models](#models)
     - [Implemented models](#implemented-models)
@@ -159,12 +159,14 @@ metrics = calculate_metrics_from_dataframe(prediction, ENTITY_TYPES)
 ## Results
 ### [Tables with metrics for implemented datasets (link)](METRICS.md)
 ### Error analysis [(link)](instruction_ner/error_analysis/README.md)
-You can view three types of model error:
+You can explore 5 types of model errors:
 1. **Mistaken recognition** - one type of entity is recognized as another
 2. **Entity is not recognized**
-3. **Overpredictiton**
+3. **Misspelling** - origin text doesn't contain the predicted entity
+4. **Overpredictiton**
+5. **[Conflicting predictions](https://github.com/universal-ner/universal-ner/issues/19)**
 
-*Confusion matrix for mistaken recognitions  is available*
+*Confusion matrix for mistaken recognitions  is available.*
 ### Restrictions
 Instruction LLM for NER performs well on flat entities, but performs poorly on datasets with large tagset and nested entites. 
 
