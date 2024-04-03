@@ -1,28 +1,37 @@
 import re
 from collections import Counter, defaultdict
-from typing import Optional
+from typing import Optional, Union
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from utils.instruct_dataset import Instruction
 
 
+def find_all_occurrences(sub_string, main_string):
+    occurrences = re.findall(re.escape(sub_string), main_string)
+    return occurrences
+
+
 def aggregate_errors(
     target_entities: list[dict[str, list[str]]],
     extracted_entities: list[dict[str, list[str]]],
-    sample_ids: list
+    texts: Optional[list[str]] = None,
+    sample_ids: Optional[list[Union[str, int]]] = None
 ) -> dict[str]:
     overall_errors = {
-        'total': 0,
+        'total_samples': 0,
         'fp': 0,
         'fn': 0,
         'mistaken_recognitions': defaultdict(list),
         'entities_not_recognized': defaultdict(list),
         'over_recognitions':defaultdict(list),
         'errors_by_keys': {},
-        'number_of_entities': defaultdict(int)
+        'number_of_entities': defaultdict(int),
+        'misspellings': [] if texts is not None else None
     }
-    for extracted_dict, target_dict, sample_id in zip(extracted_entities, target_entities, sample_ids):
+    sample_ids = sample_ids if sample_ids is not None else np.arange(len(target_entities))
+     
+    for idx, (extracted_dict, target_dict, sample_id) in enumerate(zip(extracted_entities, target_entities, sample_ids)):
         if not isinstance(extracted_dict, defaultdict) or not isinstance(target_dict, defaultdict):
             extracted_dict = defaultdict(list, extracted_dict)
             target_dict = defaultdict(list, target_dict)
@@ -47,6 +56,9 @@ def aggregate_errors(
 
             # Track mistaken recognitions with real target class
             for value in extracted_dict[entity_type]:
+                if texts is not None and len(find_all_occurrences(value, texts[idx])) == 0:
+                    overall_errors['misspellings'].append((value, entity_type, sample_id))
+                    
                 if value not in target_dict[entity_type]:
                     real_target = next((k for k, v in target_dict.items() if value in v), None)
                     if real_target is not None:
@@ -63,7 +75,7 @@ def aggregate_errors(
                     if predicted_target is None:
                         overall_errors['entities_not_recognized'][entity_type].append((value, sample_id))
                         
-        overall_errors['total'] += 1
+        overall_errors['total_samples'] += 1
     return overall_errors
 
 
@@ -145,8 +157,8 @@ def plot_confusion_matrix_from_dataframe(
 def aggregate_conflicting_predictions(
     extracted_entities: list[dict[str, list[str]]],
     texts: Optional[list[str]] = None,
-    sample_ids: Optional[list] = None, 
-    instructions: Optional[list[Instruction]] = None,
+    sample_ids: Optional[list[Union[str, int]]] = None,
+    instructions: Optional[list[Instruction]] = None
 ) -> dict[str]: 
     conflicting_predictions = {
         'total': 0,
@@ -165,13 +177,13 @@ def aggregate_conflicting_predictions(
             extracted_values = Counter(extracted_dict[entity_type])
             for word, count in extracted_values.items():
                 extracted_words[word] += count
-                number_of_word_occurrences = len(re.findall(word, text))
+                number_of_word_occurrences = len(find_all_occurrences(word, text))
                 if count < number_of_word_occurrences:
                     conflicting_predictions['total'] += 1
                     conflicting_predictions['errors_by_sample_id'][sample_id].append((word, count, number_of_word_occurrences, entity_type))
             
         for word, count in extracted_words.items():
-            number_of_word_occurrences = len(re.findall(word, text))
+            number_of_word_occurrences = len(find_all_occurrences(word, text))
             if count > max(number_of_word_occurrences, 1):
                 conflicting_predictions['total'] += 1
                 conflicting_predictions['errors_by_sample_id'][sample_id].append((word, extracted_words[word], number_of_word_occurrences))
