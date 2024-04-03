@@ -150,7 +150,7 @@ def aggregate_conflicting_predictions(
 ) -> dict[str]: 
     conflicting_predictions = {
         'total': 0,
-        'errors_by_id': defaultdict(list)
+        'errors_by_sample_id': defaultdict(list)
     }
     assert texts is not None or instructions is not None, f'expected that texts or instructions is not None'
     if sample_ids is None and instructions is not None:
@@ -168,10 +168,12 @@ def aggregate_conflicting_predictions(
                 number_of_word_occurrences = len(re.findall(word, text))
                 if count < number_of_word_occurrences:
                     conflicting_predictions['total'] += 1
-                    conflicting_predictions['errors_by_id'][sample_id].append((word, count, number_of_word_occurrences, entity_type))
+                    conflicting_predictions['errors_by_sample_id'][sample_id].append((word, count, number_of_word_occurrences, entity_type))
             
         for word, count in extracted_words.items():
+            number_of_word_occurrences = len(re.findall(word, text))
             if count > max(number_of_word_occurrences, 1):
-                conflicting_predictions['errors_by_id'][sample_id].append((word, extracted_words[word], number_of_word_occurrences))
+                conflicting_predictions['total'] += 1
+                conflicting_predictions['errors_by_sample_id'][sample_id].append((word, extracted_words[word], number_of_word_occurrences))
                 
     return conflicting_predictions
