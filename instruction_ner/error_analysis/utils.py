@@ -1,7 +1,6 @@
 import re
 from collections import Counter, defaultdict
 from typing import Optional
-
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
@@ -170,7 +169,6 @@ def aggregate_conflicting_predictions(
                 if count < number_of_word_occurrences:
                     conflicting_predictions['total'] += 1
                     conflicting_predictions['errors_by_id'][sample_id].append((word, count, number_of_word_occurrences, entity_type))
-            
             
         for word, count in extracted_words.items():
             if count > max(number_of_word_occurrences, 1):
