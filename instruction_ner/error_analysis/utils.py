@@ -90,7 +90,7 @@ def aggregate_errors_from_dataframe(
     else:
         sample_ids = dataframe[id_col_name]
         
-    return aggregate_errors(dataframe[target_col_name].values, dataframe[extracted_col_name].values, sample_ids)
+    return aggregate_errors(dataframe[target_col_name].values, dataframe[extracted_col_name].values, sample_ids=sample_ids)
 
 
 def plot_confusion_matrix(
